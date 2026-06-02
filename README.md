@@ -2,9 +2,11 @@
 Contains materials for *R Training LMI Shops: Beginning to Intermediate*, held June 2-3, 2026 in Salem, OR.
 
 **If you are accessing from GitHub**
+
 Click the green "<> Code" button (upper-right) and select "Download ZIP." This will download a ZIP file containing all of the materials to your computer. In your File Explorer, right-click the ZIP folder and select "Extract All." Open the extracted folder and move the folder inside to your preferred location (e.g., your Documents folder). 
 
 **If you are accessing from SharePoint**
+
 Copy all of the files to a new folder in a preferred location on your local computer (e.g., your Documents folder).
 
 This directory contains two sub-folders:
