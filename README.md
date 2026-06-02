@@ -1,5 +1,5 @@
 # R Training Materials README
-Contains materials for *R Training LMI Shops: Beginning to Intermediate*, held June 2-3, 2026 in Salem, OR.
+Contains materials for *R Training for LMI Shops: Beginning to Intermediate*, held June 2-3, 2026 in Salem, OR.
 
 -----
 
