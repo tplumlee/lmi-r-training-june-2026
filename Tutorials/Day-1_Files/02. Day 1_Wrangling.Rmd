@@ -1,0 +1,386 @@
+---
+title: "Data Wrangling with the Tidyverse"
+author:
+  - "Tucker Plumlee and Paul Liu"
+  - "R Training for LMI Shops: Beginning to Intermediate"
+date: "June 2, 2026: 10:45am - 12:00pm"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+This section covers the core verbs of the **tidyverse** for working with data. We'll use a prepared extract of Oregon QCEW (Quarterly Census of Employment and Wages) data: private-sector employment and wages by county and industry for 2025.
+
+Almost everything here comes from one package, **dplyr** (with a little **tidyr** for reshaping at the end). Loading `tidyverse` brings them both, plus the pipe.
+
+# Setup
+
+```{r, echo=FALSE}
+rm(list=ls())
+setwd("C:/Users/Paul Liu/Desktop/R Course (June 2-3)")
+```
+
+
+```{r}
+library(tidyverse)
+
+# The QCEW extract we'll work with. It has industry codes and county fips but not names —
+# we'll add names later using a crosswalk, which is a nice excuse to learn joins.
+oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+
+# Two small lookup tables for the joins section:
+naics_crosswalk <- read_csv("NAICS_crosswalk.csv")
+
+oregon_fips <- read_csv("oregon_fips.csv") %>%
+  rename(county_name = `county name`)     # fips code -> county name
+
+```
+
+---
+
+# 1. Looking at Your Data
+
+Always look at a data frame before you start changing it. Three quick ways:
+
+- `dim()` — how many rows and columns
+- `names()` - column names in the dataset
+- `glimpse()` — column names, types, and the first few values
+- `summary()` - summary statistics of each column
+- `View()` (capital V) — open a spreadsheet-style viewer in RStudio
+
+```{r}
+dim(oregon_qcew)
+names(oregon_qcew)
+summary(oregon_qcew)
+glimpse(oregon_qcew)
+# View(oregon_qcew)
+```
+
+Each row is one industry in one county:
+
+- `county` — county name
+- `naics` — 6-digit industry code (no name yet — we'll add that with a join)
+- `establishments`, `avg_employment` — counts
+- `avg_wkly_wage`, `avg_annual_wage` — dollars
+
+### Exercises
+
+1. Use `dim()` to confirm the number of rows and columns.
+2. How many unique counties are in the data? (Hint: `unique()` then `length()`.)
+3. Run `head(oregon_qcew)`. How is that different from `glimpse()`?
+
+---
+
+# 2. The Pipe Operator
+
+The pipe `%>%` takes the thing on its left and feeds it into the function on its right. These two lines do exactly the same thing:
+
+```{r}
+head(oregon_qcew)
+oregon_qcew %>% head()
+```
+
+The pipe is most useful when you do several things in a row. Read it top to bottom, like a recipe:
+
+```{r}
+oregon_qcew %>%
+  filter(county == "Multnomah County, Oregon") %>%
+  head()
+```
+
+### Exercises
+
+1. Rewrite `mean(c(1, 2, 3, 4, 5))` using a pipe.
+2. Pipe `oregon_qcew` into `nrow()`.
+
+---
+
+# 3. Choosing Columns with `select()`
+
+`select()` keeps only the columns you name.
+
+```{r}
+oregon_qcew %>%
+  select(county, naics, avg_employment) %>%
+  head()
+```
+
+You can drop a column instead by putting a minus sign in front of it:
+
+```{r}
+oregon_qcew %>%
+  select(-avg_annual_wage) %>%
+  head()
+```
+
+### Exercises
+
+1. Select just `county`, `naics`, and `avg_annual_wage`.
+2. Select everything except `establishments`.
+
+---
+
+# 4. Choosing Rows with `filter()`
+
+`filter()` keeps only the rows that meet a condition.
+
+```{r}
+oregon_qcew %>%
+  filter(county == "Multnomah County, Oregon")
+```
+
+Use `>`, `<`, `>=`, `<=` for numbers:
+
+```{r}
+oregon_qcew %>%
+  filter(avg_employment > 1000)
+```
+
+List several conditions separated by commas — a row has to meet *all* of them:
+
+```{r}
+oregon_qcew %>%
+  filter(county == "Multnomah County, Oregon", avg_employment > 1000)
+```
+
+To keep rows matching any value in a list, use `%in%`:
+
+```{r}
+oregon_qcew %>%
+  filter(county %in% c("Baker County, Oregon", "Benton County, Oregon"))
+```
+
+### Exercises
+
+1. Filter to rows where `avg_annual_wage` is greater than 60000.
+2. Filter to industries with more than 500 establishments.
+3. Filter to two counties of your choice using `%in%`.
+
+---
+
+# 5. Creating Columns with `mutate()`
+
+`mutate()` adds a new column calculated from existing ones.
+
+```{r}
+oregon_qcew %>%
+  mutate(wage_thousands = avg_annual_wage / 1000) %>%
+  select(county, naics, avg_annual_wage, wage_thousands) %>%
+  head()
+```
+
+You can make several columns in one `mutate()`:
+
+```{r}
+oregon_qcew %>%
+  mutate(wage_thousands = avg_annual_wage / 1000,
+         emp_per_estab  = avg_employment / establishments) %>%
+  head()
+```
+
+To create a column based on conditions, use `case_when()`. Each line is a condition on the left of the `~` and the value to assign on the right.
+
+```{r}
+oregon_qcew %>%
+  mutate(size = case_when(
+    avg_employment <  50                        ~ "Small",
+    avg_employment >= 50 & avg_employment < 500 ~ "Medium",
+    avg_employment >= 500                       ~ "Large"
+  )) %>%
+  select(county, naics, avg_employment, size) %>%
+  head()
+```
+
+### Exercises
+
+1. Create a column `total_payroll` equal to `avg_employment * avg_annual_wage`.
+2. Create a column `wage_thousands` equal to `avg_annual_wage / 1000`.
+3. Use `case_when()` to make a `wage_level` column: "Low", "Medium", or "High", using wage cutoffs you choose.
+
+---
+
+# 6. Renaming Columns with `rename()`
+
+The pattern is `rename(new_name = old_name)`:
+
+```{r}
+oregon_qcew %>%
+  rename(employment = avg_employment,
+         annual_wage = avg_annual_wage) %>%
+  head()
+```
+
+### Exercises
+
+1. Rename `avg_wkly_wage` to `weekly_wage`.
+2. Rename both `establishments` and `avg_employment` to names you like, in one `rename()` call.
+
+---
+
+
+# 7. Grouping and Summarizing
+
+`group_by()` splits the data into groups, and `summarize()` collapses each group down to a single summary row. Together they answer questions like "what's the total for each county?"
+
+```{r}
+oregon_qcew %>%
+  group_by(county) %>%
+  summarize(total_emp = sum(avg_employment))
+```
+
+A few useful pieces:
+
+- `sum()`, `mean()`, `n()` (counts rows in the group)
+- `arrange()` sorts the result; wrap a column in `desc()` for high-to-low
+
+```{r}
+oregon_qcew %>%
+  group_by(county) %>%
+  summarize(total_emp    = sum(avg_employment),
+            n_industries = n()) %>%
+  arrange(desc(total_emp))
+```
+
+### Exercises
+
+1. Find the average weekly wage for each county.
+2. Count how many industries are in each county.
+3. Find the five counties with the most total employment. (Hint: add `head(5)` at the end.)
+
+---
+
+
+
+# 8. Joining Tables
+
+Often the information you need is split across two tables. A **join** matches them up on a shared column (a "key").
+
+Our QCEW data has industry codes but no names. The crosswalk has both:
+
+```{r}
+naics_crosswalk %>% head()
+```
+
+`left_join()` keeps every row of the first table and adds matching columns from the second:
+
+```{r}
+oregon_qcew <- oregon_qcew %>%
+  left_join(naics_crosswalk, by = "naics")
+
+oregon_qcew %>%
+  select(county, naics, industry_name, avg_employment) %>%
+  head()
+```
+
+Same idea to add fips codes to the  county names from the FIPS lookup file, the data frame **oregon_fips**:
+
+```{r}
+oregon_qcew <- oregon_qcew %>%
+  left_join(oregon_fips, by = c("county" = "county_name"))
+
+oregon_qcew %>% select(fips, county, avg_employment) %>% head()
+```
+
+Now that we have the industry names, we can answer friendlier questions:
+
+```{r}
+oregon_qcew %>%
+  group_by(industry_name) %>%
+  summarize(total_emp = sum(avg_employment)) %>%
+  arrange(desc(total_emp)) %>%
+  head(10)
+```
+
+There are a few kinds of joins; `left_join()` is the one you'll reach for most:
+
+- `left_join(x, y)` — keep all rows of `x`, add matches from `y`
+- `inner_join(x, y)` — keep only rows that appear in both
+- `full_join(x, y)` — keep everything from both
+
+### Exercises
+
+1. After the joins, which industry has the highest `avg_annual_wage`? (Hint: `arrange(desc(avg_annual_wage))`.)
+2. Which county has the most total employment, using `county_name`?
+
+---
+
+# 9. Reshaping with Pivots
+
+Sometimes data needs to change shape. The two tools are `pivot_longer()` (wide to long) and `pivot_wider()` (long to wide).
+
+Our two wage columns hold the same kind of value (a wage) in two units. We can stack them into one column with `pivot_longer()`:
+
+```{r}
+wage_long <- oregon_qcew %>%
+  select(county, industry_name, avg_wkly_wage, avg_annual_wage) %>%
+  pivot_longer(cols      = c(avg_wkly_wage, avg_annual_wage),
+               names_to  = "wage_type",
+               values_to = "wage")
+
+wage_long %>% head()
+```
+
+- `cols` — which columns to stack
+- `names_to` — name of the new column holding the old column names
+- `values_to` — name of the new column holding the values
+
+`pivot_wider()` does the reverse, spreading one column back out into several:
+
+```{r}
+wage_long %>%
+  pivot_wider(names_from  = wage_type,
+              values_from = wage) %>%
+  head()
+```
+
+### Exercises
+
+1. In `wage_long`, how many rows are there compared to the original? Why?
+2. Use `pivot_wider()` on `wage_long` to get back to one row per industry.
+
+---
+
+# 10. Putting It All Together
+
+Here is a full, simple pipeline from the raw extract to a county summary — load, join, group, summarize. This is what a tidy script looks like in practice: a few steps, read top to bottom.
+
+```{r}
+county_summary <- oregon_qcew %>%
+  group_by(county) %>%
+  summarize(total_emp = sum(avg_employment),
+            avg_wage  = round(mean(avg_annual_wage))) %>%
+  arrange(desc(total_emp))
+
+county_summary
+```
+
+This is the kind of table we'll turn into charts this afternoon in the ggplot2 session.
+
+---
+
+# Wrap-Up
+
+You now know the core tidyverse verbs:
+
+- **`select()`** — choose columns
+- **`filter()`** — choose rows
+- **`mutate()`** — add new columns (and `case_when()` for conditions)
+- **`rename()`** — rename columns
+- **`group_by()`** + **`summarize()`** — totals and averages by group
+- **`left_join()`** — combine two tables on a shared key
+- **`pivot_longer()`** / **`pivot_wider()`** — change the shape of data
+- **`%>%`** — chain steps together
+
+For more practice, the free online book [R for Data Science](https://r4ds.hadley.nz/) covers all of this, and the [dplyr cheat sheet](https://rstudio.github.io/cheatsheets/data-transformation.pdf) is a handy one-page reference.
+
+This afternoon: a hands-on wrangling exercise, then making charts with ggplot2.

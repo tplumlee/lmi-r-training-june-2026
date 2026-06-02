@@ -1,0 +1,215 @@
+---
+title: "Visualizing Data in R"
+author:
+  - "Tucker Plumlee and Paul Liu"
+  - "R Training for LMI Shops: Beginning to Intermediate"
+date: "June 2, 2026: 3:15am - 4:45pm"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+So far today, we've loaded data, cleaned it, reshaped it, and summarized it. But a summary table only gets you so far in a briefing or a slide deck. Now, we are going to make that data visual.
+
+We use a package called ggplot2 (which loaded automatically when we ran library(tidyverse) this morning). It operates on a concept called the "Grammar of Graphics", which is the idea that you can build any chart by adding layers of data, aesthetics, and geometry on top of each other.
+
+# 1. The Grammar of Graphics: Layer by Layer
+
+Let's start with the county_tiers summary table we built in the applied exercise.
+
+```{r}
+# Load the raw data and the crosswalks
+library(tidyverse)
+oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+naics_crosswalk <- read_csv("NAICS_crosswalk.csv")
+oregon_fips <- read_csv("oregon_fips.csv") %>% rename(county_name = `county name`)
+
+# Join them together into one master table called 'or_data'
+or_data <- oregon_qcew %>%
+  left_join(naics_crosswalk, by = "naics") %>%
+  left_join(oregon_fips, by = c("county" = "county_name"))
+
+county_tiers <- or_data %>%
+  filter(county != "Unknown Or Undefined") %>%
+  group_by(county) %>%
+  summarize(total_emp = sum(avg_employment)) %>%
+  mutate(tier = case_when(
+    total_emp < 10000 ~ "Under 10k",
+    total_emp >= 10000 & total_emp <= 50000 ~ "10k-50k",
+    total_emp > 50000 ~ "Over 50k"
+  ))
+
+county_tiers_count <- county_tiers %>%
+  group_by(tier) %>%
+  summarize(n_counties = n())
+
+```
+
+
+If you remember, the pipe %>% takes data and pushes it forward. In ggplot2, we use the + sign to add new layers to our canvas.
+
+First, we set up the blank canvas and tell it what data to use:
+```{r}
+# 1. The "Canvas"
+ggplot(data = county_tiers_count)
+
+```
+
+
+Next, we add aesthetics (aes()). This maps columns in our data to visual properties on the chart (like the x-axis, y-axis, or color)
+
+```{r}
+# 2. The Axes
+ggplot(data = county_tiers_count, aes(x = tier, y = n_counties))
+
+```
+
+
+Finally, we add a geom (geometry) to tell R what type of visualization we want. Since we want a bar chart, we use geom_col().
+
+```{r}
+# 3. The Content
+ggplot(data = county_tiers_count, aes(x = tier, y = n_counties)) +
+  geom_col()
+
+```
+
+### Exercises
+
+1. Change geom_col() to geom_point(). What happens?
+2. Inside geom_col(), add the argument fill = "darkblue".
+
+
+# 2. Visualizing Industries via a Horizontal Bar Chart
+
+Let's look at the economic profile of Clatsop County.
+
+First, let's use our wrangling skills to grab their top 10 industries by *total payroll*. We'll define this **as avg_employment x avg_wkly_wage**
+
+```{r}
+clatsop_top10_payroll <- or_data %>%
+  filter(county == "Clatsop County") %>%
+  mutate(payroll = avg_employment * avg_wkly_wage) %>% 
+  group_by(industry_name) %>%
+  summarize(total_payroll = sum(payroll, na.rm = TRUE)) %>%
+  arrange(desc(total_payroll)) %>%
+  head(10)
+
+clatsop_top10_payroll
+
+```
+
+
+If we plot this normally, the long industry names will overlap on the x-axis and become completely unreadable:
+```{r}
+# Don't do this! The text will be an unreadable mess.
+ggplot(clatsop_top10_payroll, aes(x = industry_name, y = total_payroll)) +
+  geom_col()
+
+```
+
+Let's try the horizontal bar chart. We map the long names to the y axis, and use a  function called **reorder()** to sort the bars from largest to smallest.
+
+```{r}
+ggplot(clatsop_top10_payroll, 
+       aes(x = total_payroll, y = reorder(industry_name, total_payroll))) +
+  geom_col()
+
+```
+
+
+# 3. Formatting Visualizations
+
+A grey background and raw variable names are fine for quick analysis, but you wouldn't drop this into a brief. Let's polish this chart for a final presentation.
+
+We are going to add four things:
+
+  - **theme_minimal()**: Cleans up the background.
+  - **scale_x_continuous()**: Formats our raw numbers in dollars and with commas. (Requires the scales package).
+  - **labs()**: Adds titles, subtitles, and cleans up the axis labels.
+  
+  
+```{r}
+# Load the scales package for number formatting
+library(scales)
+
+polished_plot <- ggplot(clatsop_top10_payroll, 
+                        aes(x = total_payroll, y = reorder(industry_name, total_payroll))) +
+  geom_col(fill = "steelblue") +
+  scale_x_continuous(labels = label_currency()) +
+  theme_minimal() +
+  labs(
+    title = "Top 10 Industries by Total Estimated Payroll",
+    subtitle = "Clatsop County, Oregon (2025)",
+    x = "Total Estimated Payroll",
+    y = NULL,
+    caption = "Source: BLS QCEW; Q1-Q3 2025"
+  )
+
+polished_plot
+
+```
+  
+The industry names on the y-axis is taking up too much of the page. We will use a function called **scale_y_discrete()** to automatically wrap the text on the y-axis after a certain number of characters.
+
+```{r}
+polished_plot <- ggplot(clatsop_top10_payroll, 
+                        aes(x = total_payroll, y = reorder(industry_name, total_payroll))) +
+  geom_col(fill = "steelblue") +
+  scale_x_continuous(labels = label_currency()) +
+  scale_y_discrete(labels = label_wrap(30)) + # this is the new layer that wraps the industry names if they go over a certain character limit
+  theme_minimal() +
+  labs(
+    title = "Top 10 Industries by Total Estimated Payroll",
+    subtitle = "Clatsop County, Oregon (2025)",
+    x = "Total Estimated Payroll",
+    y = NULL,
+    caption = "Source: BLS QCEW; Q1-Q3 2025"
+  )
+
+polished_plot
+
+```
+
+    
+# 4. Brief Overview of Interactive Visualizations
+
+You do not need to learn a completely new language to make interactive charts. The ***plotly*** package can automatically translate your ggplot into an interactive widget.
+
+Notice that in the previous step, we saved our formatted chart to an object called polished_plot. Watch what happens when we feed it to ggplotly():
+
+```{r}
+# Install first if you haven't: install.packages("plotly")
+library(plotly)
+
+ggplotly(polished_plot)
+
+```
+
+
+
+
+# Day 1 Wrap-Up
+
+You've made it! Today you learned how to:
+
+    Navigate RStudio and manage your environment.
+
+    Clean, filter, mutate, and reshape data using the tidyverse.
+
+    Combine datasets using joins.
+
+    Build, customize, and export professional visualizations using ggplot2.
+
+Tomorrow: We move from local files to the cloud. We will connect directly to Census and BLS APIs, map spatial geographic data, and learn how to write dynamic, reproducible reports using Quarto.

@@ -1,0 +1,170 @@
+---
+title: "Applied Data Wrangling Exercises"
+author:
+  - "Tucker Plumlee and Paul Liu"
+  - "R Training for LMI Shops: Beginning to Intermediate"
+date: "June 2, 2026: 1:00pm - 3:00pm"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
+```
+
+#Introduction
+This afternoon is all about putting the morning's lessons to work. We are going to take the raw Oregon QCEW data, clean it up, and answer four realistic Labor Market Information (LMI) research questions.
+
+#Four Questions 
+1. Which industries employ the most Oregonians, and how widely are they reported?
+2. How do Oregon's 36 counties sort by size?
+3. How concentrated is each county's employment?
+4. How would you build a county-by-industry employment matrix? 
+
+# Setup and data preparation
+
+```{r}
+library(tidyverse)
+
+# Load the raw data and the crosswalks
+oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+naics_crosswalk <- read_csv("NAICS_crosswalk.csv")
+oregon_fips <- read_csv("oregon_fips.csv") %>% rename(county_name = `county name`)
+
+# Join them together into one master table called 'or_data'
+or_data <- oregon_qcew %>%
+  left_join(naics_crosswalk, by = "naics") %>%
+  left_join(oregon_fips, by = c("county" = "county_name"))
+
+```
+
+Note two important quirks in the data.
+
+1. Suppressed Data: Due to confidentiality rules, many industries have their employment counts hidden. In this dataset, suppressed employment shows up as a 0
+2. The 37th County: Oregon has 36 counties, but if you look closely, this dataset has 37. Statewide unclassified employment is grouped under "Unknown Or Undefined"
+
+# 1. Statewide Industry Analysis
+
+**Question:** Which industries employ the most Oregonians, and how widely are they reported?
+
+For each industry, compute the total statewide employment and the number of counties reporting it (i.e., non-suppressed data). Sort the results from highest employment to lowest.
+
+*Hint: Remember that suppressed cells show up as 0. If you don't filter those out, they won't change your sum, but they will artificially inflate your count!*
+
+```{r}
+
+top_industries <- or_data %>%
+  filter(avg_employment > 0) %>%
+  group_by(industry_name) %>%
+  summarize(
+    total_emp = sum(avg_employment),
+    counties_reporting = n()
+  ) %>%
+  arrange(desc(total_emp))
+
+top_industries
+
+```
+
+
+# 2. Oregon's Counties Ranked by Total Employment
+
+**Question:** How do Oregon's 36 counties sort by size?
+
+Calculate the total number of jobs per county. Then, classify each county's economy into one of three tiers: "Under 10k", "10k-50k", or "Over 50k". Finally, report how many counties land in each tier.
+
+*Hint: This is where you need to filter out the "Unknown Or Undefined" county so you end up with exactly 36 real counties. Use case_when() inside a mutate() for your classifications.*
+
+```{r}
+# EXERCISE 2
+county_tiers <- or_data %>%
+  filter(county != "Unknown Or Undefined") %>%
+  group_by(county) %>%
+  summarize(total_emp = sum(avg_employment)) %>%
+  mutate(tier = case_when(
+    total_emp < 10000 ~ "Under 10k",
+    total_emp >= 10000 & total_emp <= 50000 ~ "10k-50k",
+    total_emp > 50000 ~ "Over 50k"
+  ))
+
+county_tiers %>%
+  group_by(tier) %>%
+  summarize(n_counties = n())
+
+#OR
+
+county_tiers %>% count(tier)
+```
+
+# 3. Industry Concentration
+
+**Question:** What is employment share of a county's largest industry? 
+
+For each county, calculate what share of its total employment sits in its single largest industry. Rank the counties from most-concentrated to least-concentrated.
+
+*Hint: You can use mutate() right after summarize(). Try computing largest = max(avg_employment) and total = sum(avg_employment) in your summary, then use mutate() to find the share.*
+
+```{r}
+# EXERCISE 3
+emp_share <- or_data %>%
+  group_by(county) %>%
+  arrange(desc(avg_employment)) %>% 
+  summarize(
+    largest_industry = first(industry_name),
+    largest_industry_emp = max(avg_employment),
+    total_emp = sum(avg_employment),
+  ) %>%
+  mutate(share = largest_industry_emp / total_emp) %>%
+  arrange(desc(share))
+
+emp_share
+```
+
+
+# 4. Building a Cross-Tab
+
+**Goal**: Build a county-by-industry employment matrix for our visualization block.
+
+Reshape the data so that industries are rows and the five largest counties (Multnomah, Washington, Clackamas, Lane, Marion) are columns, with the employment counts in the cells.
+
+*Hint: Use filter(county %in% c(...)) to isolate the top 5 counties. When you use pivot_wider(), add the argument values_fill = 0 inside the parentheses so missing industries don't show up as NAs.*
+
+```{r}
+# EXERCISE 4
+top_5_counties <- c("Multnomah County", "Washington County", "Clackamas County", "Lane County", "Marion County")
+
+county_emp_matrix <- or_data %>%
+  filter(county %in% top_5_counties) %>%
+  select(county, industry_name, avg_employment) %>%
+  pivot_wider(
+    names_from = county, 
+    values_from = avg_employment, 
+    values_fill = 0
+  )
+
+county_emp_matrix
+
+```
+
+
+# 5. Stretch Exercise (Optional)
+Can you restructure this matrix back to long form?
+
+```{r}
+long_form_data <- county_emp_matrix %>%
+  pivot_longer(
+    cols = c("Multnomah County", "Washington County", "Clackamas County", "Lane County", "Marion County"),
+    names_to = "county",
+    values_to = "avg_employment")
+
+long_form_data
+
+```
+
+

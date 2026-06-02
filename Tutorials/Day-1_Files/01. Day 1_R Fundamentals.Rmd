@@ -1,0 +1,269 @@
+---
+title: "R Fundamentals"
+author:
+  - "Tucker Plumlee and Paul Liu"
+  - "R Training for LMI Shops: Beginning to Intermediate"
+date: "June 2, 2026: 9:30am - 10:30am"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+This first session covers the basics you need to feel at home in R: what the windows in front of you are, how to run code, how to store things, how to add the tools (packages) we'll use, and how to load a data file. By the end you'll have read in the Oregon employment dataset we use for the rest of the day.
+
+No prior programming experience is assumed. If something doesn't click right away, that's normal — you'll see all of it again in the hands-on sessions.
+
+---
+
+# 1. R and RStudio
+
+**R** is the programming language that does the work. **RStudio** is the program you actually look at — it's an *IDE* (integrated development environment), which is just software that makes writing and running R easier: a place to write code, run it, see results, view plots, and read help.
+
+When you open RStudio you'll see (up to) four **panes**:
+
+- **Source** (top-left) — where you write and save scripts. If no file is open, this pane is hidden and the Console fills the space.
+- **Console** (bottom-left) — where code actually runs and results appear.
+- **Environment** (top-right) — a list of the objects (data, values) you've created.
+- **Viewer/Output** (bottom-right) — plots, files, installed packages, and help pages.
+
+You can rearrange and recolor these under **Tools > Global Options** if you like.
+
+### Exercises
+
+1. Open RStudio and find all four panes.
+2. Open a new script with **File > New File > R Script**. Watch the Source pane appear.
+
+---
+
+# 2. The Console: Running Code
+
+The Console runs code immediately. Type something after the `>` prompt and press Enter. R works as a calculator out of the box:
+
+```{r}
+2 + 2
+100 / 4
+sqrt(81)
+```
+
+A function is a command that does something; you give it inputs in parentheses:
+
+```{r}
+sum(10, 20, 30)
+round(3.14159, 1)
+```
+
+The Console is great for quick, throwaway calculations. For anything you want to keep, use a script (next section).
+
+### Exercises
+
+1. Use the Console to compute `45 * 12`.
+2. Try `round(2.71828, 2)`.
+
+---
+
+# 3. Scripts: Saving Your Work
+
+A **script** is a plain text file (ending in `.R`) where you write code you want to keep. You type your code in the Source pane, then run it.
+
+To run code from a script:
+
+- **One line:** put your cursor on the line and press **Ctrl+Enter** (Cmd+Enter on Mac).
+- **The whole script:** click **Source** at the top of the pane.
+
+Anything after a `#` is a **comment** — R ignores it. Comments explain what your code does (to others, and to future you):
+
+```{r}
+# Calculate the average of three wages
+mean(c(45000, 52000, 38000))
+```
+
+Save your script with **Ctrl+S**. Now your work is reproducible — you (or a colleague) can reopen it and run it again.
+
+### Exercises
+
+1. Open a new script, type the comment and `mean()` line above, and run it with Ctrl+Enter.
+2. Save the script as `practice.R`.
+
+---
+
+# 4. Objects and Assignment
+
+You store a value in an **object** using the assignment arrow `<-` (a less-than sign and a dash). RStudio has a shortcut: **Alt+-** (Alt and minus).
+
+```{r}
+wage <- 52000
+wage
+```
+
+Once stored, you can use the object in later code:
+
+```{r}
+annual <- wage * 1
+monthly <- wage / 12
+monthly
+```
+
+Every object you create shows up in the **Environment** pane (top-right). Object names should be short and meaningful — use letters, numbers, and underscores, and don't start with a number.
+
+### Exercises
+
+1. Create an object `employees <- 250`.
+2. Create `avg_wage <- 48000`, then compute total payroll as `employees * avg_wage`.
+
+---
+
+# 5. Vectors and Data Frames
+
+A **vector** is a set of values of the same type, made with `c()` (for "combine"):
+
+```{r}
+wages <- c(45000, 52000, 38000, 61000)
+wages
+mean(wages)
+max(wages)
+```
+
+A **data frame** is a table — rows and columns, like a spreadsheet. Each column is a vector. This is the shape almost all of our data takes. We won't build one by hand; we'll load one from a file in a moment, and every column in it (employment, wages, etc.) is just a vector.
+
+### Exercises
+
+1. Make a vector `emp <- c(10, 25, 5, 40)` and find its `sum()`.
+2. Find the `mean()` of `emp`.
+
+---
+
+# 6. Packages
+
+R comes with many built-in functions, but most of what we do uses **packages** — add-on collections of functions. Two steps, and people often confuse them:
+
+- **Install once per computer** with `install.packages()`. (You've likely done this before the workshop.)
+- **Load every session** with `library()`, at the top of your script.
+
+```{r, eval=FALSE}
+# Run these once, if you haven't already:
+install.packages("tidyverse")
+```
+
+```{r}
+# Run this at the start of every session:
+library(tidyverse)   # data wrangling and plotting tools
+```
+
+The **tidyverse** is actually a bundle of packages (including `readr` for reading data and `dplyr` for wrangling). Loading it loads them all.
+
+### Exercises
+
+1. Load `tidyverse` and `here` with `library()`.
+2. In your own words, what's the difference between `install.packages()` and `library()`?
+
+---
+
+# 7. Where Your Files Live: the Working Directory
+
+Think of R like a chef in a kitchen. Before the chef can grab ingredients (like data files) or put down a finished dish (like a saved plot), they need to know which kitchen they are standing in.
+
+In R, this "kitchen" is called your working directory—the specific folder on your computer where R automatically looks for files to read and where it will save files you create.
+
+To find out exactly which folder R is currently looking at, you use the get working directory function:
+
+```{r}
+getwd()
+
+```
+
+When you run this, R will print out a "file path" (e.g., "C:/Users/YourName/Documents"). This is your current home base.
+
+If your data files are in a different folder, you have to tell R to move to that folder using the set working directory function. You paste the file path inside the parentheses as a piece of text (in quotation marks):
+
+```{r, eval=FALSE}
+setwd("C:/Users/YourName/Documents/MyRFolder")
+
+```
+
+**Watch out for slashes!** Windows uses backslashes () for file paths, but R requires forward slashes (/) or double backslashes (\). If you copy and paste a path on Windows, you will need to change \ to /, or R will give you an error.
+
+### Exercises
+
+1. Run `getwd()` in your console. Write down or look closely at the folder path it returns.
+2. Try using `setwd()` to change your working directory to that new folder. Run getwd() again to confirm that R successfully moved to the new location.
+
+---
+
+# 8. Reading In Data
+
+```{r, echo=FALSE}
+setwd("C:/Users/Paul Liu/Desktop/R Course (June 2-3)")
+```
+
+
+After setting your working directory using `setwd()`, we will use `read_csv()` (from the tidyverse) to load our first dataset into R. Let's load the Oregon QCEW employment data we'll use for the rest of the day:
+
+```{r}
+oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+```
+
+Always look at what you just loaded:
+
+```{r}
+summary(oregon_qcew)   # summary stats of the variables in the data
+glimpse(oregon_qcew)   # columns, types, first values
+head(oregon_qcew)      # first six rows
+```
+
+You now have a data frame called `oregon_qcew` in your Environment. This is exactly where the next session — Data Wrangling — picks up.
+
+### Exercises
+
+1. Read in `oregon_counties_qcew.csv` as shown.
+2. Run `glimpse()` on it. How many rows and columns does it have?
+
+---
+
+# 9. Good Habits
+
+A few practices that save a lot of pain:
+
+- **Write code in scripts, not just the Console.** The Console is for quick tests; the script is your saved, repeatable work.
+- **Comment as you go** with `#`. Future-you will be grateful.
+- **Start clean.** Restart R now and then (**Session > Restart R**) and re-run your script from the top. A script that runs top-to-bottom in a fresh session is a reliable script. One practice is to put **rm(list = ls())** at the top of your script. This clears all files in your global environment and allows your script to run with a blank slate.
+- **Get help.** Put a `?` before any function name to open its help page:
+
+```{r, eval=FALSE}
+?mean
+?read_csv
+```
+
+- **When stuck, read the error.** R's messages look intimidating but usually name the problem. Copying an error into a search engine almost always helps.
+
+### Exercises
+
+1. Open the help page for `read_csv` with `?read_csv`.
+2. Restart R (**Session > Restart R**) and re-run your script from the top.
+
+---
+
+# Wrap-Up
+
+You can now:
+
+- recognize the **Source**, **Console**, **Environment**, and **Viewer** panes
+- run code in the **Console** and save it in a **script**
+- store values in **objects** with `<-`
+- work with **vectors** and **data frames**
+- **install** and **load** packages
+- find files with an **RStudio Project** and **`here()`**
+- **read in a CSV** and look at it
+
+That last point — `oregon_qcew` loaded and ready — is the starting line for the Data Wrangling session next.
+
+For reference and continued practice: [R for Data Science](https://r4ds.hadley.nz/) and the [Posit cheatsheets](https://posit.co/resources/cheatsheets/).
