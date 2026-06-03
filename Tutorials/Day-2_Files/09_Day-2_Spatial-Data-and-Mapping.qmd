@@ -1,0 +1,651 @@
+---
+title: Spatial Data and Mapping
+date: 2026-06-03T14:30
+date-format: "dddd, MMMM D, YYYY; h:mmA"
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(sf)
+library(tmap)
+```
+
+## Getting Geographic Data from tidycensus and tigris
+
+### The `geometry` Argument in tidycensus
+
+In a previous session, we used `get_acs()` from tidycensus to pull population data for Oregon counties. One of the arguments we used was `geometry = TRUE`. This is the key to unlocking mapping in R with Census data.
+
+When you set `geometry = TRUE`, tidycensus does not just return a table of numbers --- it also downloads the **TIGER/Line shapefiles** from the U.S. Census Bureau and attaches them to your data. TIGER/Line files are the official geographic boundary files the Census Bureau uses to define the shapes of states, counties, tracts, and other geographies. The result is an `sf` (simple features) object: a data frame where one column (`geometry`) contains the spatial information for each row.
+
+This means you get your data and your map boundaries in a single, tidy object --- ready to plot or analyze without any additional file downloads.
+
+### The tigris Package
+
+Behind the scenes, tidycensus uses the [tigris](https://github.com/walkerke/tigris) package to download shapefiles. You can also use tigris directly when you need geographic boundaries without Census data attached. For example:
+
+```{r}
+#| label: tigris-example
+#| eval: false
+
+library(tigris)
+
+# Download Oregon county boundaries
+or_counties_geo <- counties(state = "OR", year = 2024)
+
+# Download Oregon state boundary
+or_state <- states() |> filter(STUSPS == "OR")
+
+# Download roads for a specific county
+or_roads <- roads(state = "OR", county = "Multnomah", year = 2024)
+```
+
+The tigris package provides functions for many geography types: `states()`, `counties()`, `tracts()`, `block_groups()`, `places()`, `roads()`, `school_districts()`, and more.
+
+### Loading Our Data
+
+In the previous session, we pulled ACS data for Oregon counties with `geometry = TRUE` and saved it. Let's load that data now:
+
+```{r}
+#| label: load-geo-data
+
+or_geo_data <- readRDS("Data/or_geo_data.RDS")
+
+# Take a look at the structure
+glimpse(or_geo_data)
+```
+
+Notice the `geometry` column --- it contains the polygon shapes for each county. The `sf` package knows how to work with this column, and ggplot2 and tmap both understand `sf` objects natively.
+
+```{r}
+#| label: check-class
+
+class(or_geo_data)
+```
+
+The object has both `sf` and `data.frame` classes, which means it works with all your familiar dplyr operations *and* spatial functions.
+
+## Mapping in ggplot2 and tmap
+
+### Basic Choropleth Maps Using ggplot2
+
+A **choropleth map** colors geographic areas based on a data variable. With ggplot2, creating one from an `sf` object is straightforward using `geom_sf()`:
+
+```{r}
+#| label: fig-ggplot-basic
+#| fig-cap: "Percentage Population Change by Oregon County"
+#| fig-alt: "Choropleth map of Oregon counties colored by population percent change."
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+ggplot(or_geo_data) +
+  geom_sf(aes(fill = pct_change), color = "white", linewidth = 0.2) +
+  scale_fill_gradient2(
+    low = "tomato",
+    mid = "white",
+    high = "steelblue",
+    midpoint = 0,
+    name = "Pop. Change (%)"
+  ) +
+  labs(
+    title = "Population Change by County",
+    subtitle = "2015–2019 vs. 2020–2024 ACS 5-Year Estimates",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  theme_void(base_size = 12) +
+  theme(
+    legend.position = "right"
+  )
+```
+
+`geom_sf()` automatically handles the projection and geometry --- you just map aesthetics like `fill` to your data variable the same way you would in any other ggplot. `theme_void()` removes axes, gridlines, and background, which is standard for maps.
+
+You can also add labels:
+
+```{r}
+#| label: fig-ggplot-labels
+#| fig-cap: "Oregon Counties with Labels"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+ggplot(or_geo_data) +
+  geom_sf(aes(fill = pct_change), color = "white", linewidth = 0.2) +
+  geom_sf_text(aes(label = county), size = 2, color = "grey30") +
+  scale_fill_gradient2(
+    low = "tomato", mid = "white", high = "steelblue",
+    midpoint = 0, name = "Pop. Change (%)"
+  ) +
+  theme_void(base_size = 12)
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 1: ggplot2 Choropleth
+
+Create a choropleth map of Oregon counties showing **2024 population** (`pop_2024`) instead of population change. Use a sequential color scale (`scale_fill_viridis_c()` is a good option). Add a title and source caption.
+
+```{r}
+#| label: exercise-1
+#| eval: false
+
+ggplot(or_geo_data) +
+  geom_sf(aes(fill = ______), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(name = "Population") +
+  labs(
+    title = "______",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  theme_void()
+```
+:::
+
+### Using tmap for Additional Customization
+
+While ggplot2 handles basic maps well, the [tmap](https://r-tmap.github.io/tmap/) package is purpose-built for thematic mapping and offers **greater control over choropleth scales** --- the classification methods used to bin continuous data into color categories. This matters because different binning methods can tell very different stories with the same data.
+
+#### Quick Look with `qtm()`
+
+The `qtm()` function (short for "quick thematic map") is tmap's equivalent of ggplot2's `qplot()` --- a fast way to get a map on screen:
+
+```{r}
+#| label: fig-qtm
+#| fig-cap: "Quick Thematic Map of Population Change"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+qtm(or_geo_data, fill = "pct_change")
+```
+
+With a single line, tmap creates a choropleth with a legend and sensible defaults. This is useful for quick exploration before building a more polished map.
+
+#### Building a Map with `tm_shape()` and `tm_polygons()`
+
+For more control, use the layered tmap syntax. This starts with `tm_shape()` (which specifies the data) followed by layer functions like `tm_polygons()`:
+
+```{r}
+#| label: fig-tmap-basic
+#| fig-cap: "Population Change with tmap Default Intervals"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  ) +
+  tm_title("Population Change by Oregon County")
+```
+
+#### Trying Different Scales
+
+The real power of tmap is in its scale system. The `fill.scale` argument inside `tm_polygons()` lets you control exactly how numeric values are mapped to colors. The `tm_scale_intervals()` function offers many classification styles:
+
+- **`"pretty"`** --- rounds to nice break values (default)
+- **`"equal"`** --- divides the range into equal-width intervals
+- **`"quantile"`** --- each class has roughly the same number of observations
+- **`"jenks"`** --- minimizes within-class variance (natural breaks)
+- **`"fisher"`** --- similar to Jenks, optimized for speed
+- **`"sd"`** --- intervals based on standard deviations from the mean
+
+Let's compare a few:
+
+```{r}
+#| label: fig-tmap-quantile
+#| fig-cap: "Quantile Classification (Equal Count per Class)"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_intervals(
+      style = "quantile",
+      n = 5,
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  ) +
+  tm_title("Population Change (Quantile Breaks)")
+```
+
+```{r}
+#| label: fig-tmap-jenks
+#| fig-cap: "Jenks Natural Breaks Classification"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_intervals(
+      style = "jenks",
+      n = 5,
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  ) +
+  tm_title("Population Change (Jenks Natural Breaks)")
+```
+
+You can also use a continuous scale instead of intervals:
+
+```{r}
+#| label: fig-tmap-continuous
+#| fig-cap: "Continuous Color Scale"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_continuous(
+      midpoint = 0,
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  ) +
+  tm_title("Population Change (Continuous Scale)")
+```
+
+::: {.callout-important}
+## Classification Choices Matter
+The same data mapped with different classification methods can lead to very different visual impressions. Quantile breaks ensure even color distribution but can group very different values together. Jenks breaks highlight natural clusters but may have uneven class sizes. Always consider your audience and the story you want to tell when choosing a classification method.
+:::
+
+#### Basic Interactive Map
+
+One of tmap's standout features is the ability to switch between static ("plot") and interactive ("view") modes. Interactive maps use Leaflet under the hood and let users zoom, pan, and click on features:
+
+```{r}
+#| label: fig-tmap-interactive
+#| fig-cap: "Interactive Map of Population Change"
+
+# Switch to interactive mode
+tmap_mode("view")
+
+tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_intervals(
+      style = "jenks",
+      n = 5,
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  )
+```
+
+```{r}
+#| label: reset-tmap-mode
+#| include: false
+
+# Switch back to static mode for the rest of the walkthrough
+tmap_mode("plot")
+```
+
+Click on any county in the interactive map to see its data values. This is especially useful for presentations and exploratory analysis.
+
+::: {.callout-tip collapse="true"}
+## Exercise 2: tmap Scale Comparison
+
+Create two side-by-side maps of the `pop_2024` variable (total 2024 population): one using `style = "equal"` and one using `style = "quantile"`, both with 5 classes. Use the `tmap_arrange()` function to display them together. How do the two maps differ in what they emphasize?
+
+```{r}
+#| label: exercise-2
+#| eval: false
+
+map_equal <- tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pop_2024",
+    fill.scale = tm_scale_intervals(style = "______", n = 5),
+    fill.legend = tm_legend(title = "Population")
+  ) +
+  tm_title("Equal Intervals")
+
+map_quantile <- tm_shape(or_geo_data) +
+  tm_polygons(
+    fill = "pop_2024",
+    fill.scale = tm_scale_intervals(style = "______", n = 5),
+    fill.legend = tm_legend(title = "Population")
+  ) +
+  tm_title("Quantile Breaks")
+
+tmap_arrange(map_equal, map_quantile)
+```
+:::
+
+## Basic GIS Using sf
+
+### GIS Fundamentals
+
+**GIS** (Geographic Information Systems) is the practice of analyzing spatial data --- data that has a geographic location associated with it. The core GIS operations we will cover today involve:
+
+- **Dissolving/merging** geometries: combining multiple smaller areas into larger regions
+- **Aggregating** data during a dissolve: summing or averaging values for the merged areas
+- **Reading shapefiles**: loading external geographic data files
+- **Spatial joins**: linking datasets based on geographic overlap rather than shared keys
+
+In R, the `sf` (simple features) package provides all of these capabilities. Because `sf` objects are also data frames, you can use familiar dplyr functions like `group_by()`, `summarize()`, and `left_join()` --- and sf will handle the geometry automatically.
+
+### Merging Counties into Workforce Investment Board (WIB) Regions
+
+Oregon's counties are grouped into **Workforce Investment Board (WIB)** regions. Let's dissolve individual county shapes into WIB regions and recalculate population statistics for each.
+
+#### Step 1: Load and Prepare the Crosswalk
+
+First, we will load a crosswalk table that maps each county to its WIB region, then join it to our geographic data:
+
+```{r}
+#| label: load-crosswalk
+
+# Load the county-to-WIB crosswalk
+wib_crosswalk <- read_csv("Data/OR_WIB_Counties.csv")
+
+head(wib_crosswalk)
+```
+
+The crosswalk has a `CNTY_CODE` field, but our geographic data uses a full `GEOID` that includes the state FIPS code. Oregon's state FIPS code is **41**, so we need to prepend it:
+
+```{r}
+#| label: prepare-crosswalk
+
+# Create a GEOID field by adding "41" to the front of CNTY_CODE
+wib_crosswalk <- wib_crosswalk |>
+  mutate(GEOID = paste0("41", CNTY_CODE))
+
+head(wib_crosswalk)
+```
+
+Now join the crosswalk to the geographic data:
+
+```{r}
+#| label: join-crosswalk
+
+# Join the WIB region assignment to the county data
+or_geo_wib <- or_geo_data |>
+  left_join(wib_crosswalk, by = "GEOID")
+
+head(or_geo_wib)
+```
+
+#### Step 2: Dissolve County Shapes into WIB Regions
+
+Here is where the GIS magic happens. When you `group_by()` and `summarize()` an `sf` object, sf automatically **dissolves** (merges) the geometries of grouped features. At the same time, you can aggregate your data variables:
+
+```{r}
+#| label: dissolve-wib
+
+# Dissolve counties into WIB regions and aggregate population
+or_wib <- or_geo_wib |>
+  group_by(Region) |>
+  summarize(
+    pop_2024 = sum(pop_2024, na.rm = TRUE),
+    pop_2019 = sum(pop_2019, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+or_wib
+```
+
+Each row now represents a WIB region instead of a county. The `geometry` column contains the merged polygon --- sf combined the county boundaries within each region into a single shape.
+
+#### Step 3: Recalculate Population Change
+
+Since we aggregated the raw population counts, we need to recalculate the percentage change for each WIB region:
+
+```{r}
+#| label: wib-pct-change
+
+or_wib <- or_wib |>
+  mutate(
+    pop_change = pop_2024 - pop_2019,
+    pct_change = (pop_change / pop_2019) * 100
+  )
+
+or_wib
+```
+
+#### Step 4: Map Population Change by WIB Region
+
+Now let's map the WIB regions just as we mapped counties earlier:
+
+```{r}
+#| label: fig-wib-map
+#| fig-cap: "Percentage Population Change by WIB Region"
+#| fig-alt: "Choropleth map of Oregon WIB regions colored by population percent change."
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_wib) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_intervals(
+      style = "jenks",
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "Pop. Change (%)"),
+    col = "white",
+    lwd = 0.5
+  ) +
+  tm_text("Region", size = 0.6) +
+  tm_title("Population Change by WIB Region")
+```
+
+Compare this map with the county-level version. Aggregating to WIB regions smooths out county-level variation and highlights broader regional trends.
+
+::: {.callout-tip collapse="true"}
+## Exercise 3: Dissolve Practice
+
+Using the `or_geo_wib` dataset (which has both county data and WIB assignments), dissolve the counties into WIB regions but this time calculate the **mean** unemployment rate (if the data includes one) or the **total** `pop_2024` and the **number of counties** in each region. Map the number of counties per WIB to see which regions cover the most counties.
+
+```{r}
+#| label: exercise-3
+#| eval: false
+
+or_wib_counts <- or_geo_wib |>
+  group_by(______) |>
+  summarize(
+    n_counties = n(),
+    total_pop = sum(______, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+tm_shape(or_wib_counts) +
+  tm_polygons(
+    fill = "n_counties",
+    fill.legend = tm_legend(title = "# Counties")
+  ) +
+  tm_text("Region", size = 0.6)
+```
+:::
+
+### Loading Shapefiles
+
+Not all geographic data comes from tidycensus. You will often work with shapefiles (`.shp` files) from state agencies, federal programs, or other sources. The `sf` package reads shapefiles with `st_read()`.
+
+#### Reading a WIB Region Shapefile
+
+Let's read in a WIB shapefile provided by Oregon:
+
+```{r}
+#| label: read-wib-shp
+
+# Read the WIB shapefile
+or_wib_shp <- st_read("Data/OR_WIB/OR_WIB.shp")
+
+# Look at the structure
+glimpse(or_wib_shp)
+```
+
+```{r}
+#| label: fig-wib-shp-map
+#| fig-cap: "WIB Regions from Shapefile"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+qtm(or_wib_shp)
+```
+
+::: {.callout-note}
+## Shapefile Components
+A "shapefile" is actually a collection of files that work together. At minimum you will see `.shp` (geometry), `.shx` (spatial index), `.dbf` (attributes), and `.prj` (projection). When you point `st_read()` at the `.shp` file, it automatically finds and reads the companion files. Always keep all the component files together in the same folder.
+:::
+
+#### Reading a Point Shapefile
+
+Shapefiles can represent points (like locations), lines (like roads), or polygons (like boundaries). Let's read in a point shapefile of Oregon community colleges:
+
+```{r}
+#| label: read-colleges-shp
+
+# Read the community college locations
+or_colleges <- st_read("Data/OR_Colleges/OR_Colleges.shp")
+
+glimpse(or_colleges)
+```
+
+```{r}
+#| label: fig-colleges-on-wib
+#| fig-cap: "Oregon Community Colleges Overlaid on WIB Regions"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_wib_shp) +
+  tm_polygons(fill = "grey90", col = "white", lwd = 0.5) +
+tm_shape(or_colleges) +
+  tm_symbols(size = 0.5, fill = "steelblue", col = "white") +
+  tm_title("Oregon Community Colleges by WIB Region")
+```
+
+tmap builds maps in layers, just like ggplot2. Here we add the WIB region polygons first as a base layer, then overlay the college point locations on top.
+
+::: {.callout-tip collapse="true"}
+## Exercise 4: Layer Multiple Datasets
+
+Create a map that shows the dissolved WIB regions (from `or_wib`, the dataset we created by dissolving counties) with population change as the fill color, then overlay the community college points on top. This combines the choropleth we built earlier with the point layer.
+
+```{r}
+#| label: exercise-4
+#| eval: false
+
+tm_shape(______) +
+  tm_polygons(
+    fill = "pct_change",
+    fill.scale = tm_scale_intervals(style = "jenks", values = "brewer.rd_yl_bu"),
+    fill.legend = tm_legend(title = "Pop. Change (%)")
+  ) +
+tm_shape(______) +
+  tm_symbols(size = 0.5, fill = "black") +
+  tm_title("Community Colleges and WIB Population Change")
+```
+:::
+
+### Spatial Joins
+
+A **spatial join** links two datasets based on geographic relationship (like intersection or containment) rather than a shared key column. This is one of the most useful GIS operations: if you have points (colleges) and polygons (WIB regions), a spatial join tells you which polygon each point falls inside.
+
+#### Joining Colleges to WIB Regions
+
+Let's associate each community college with the WIB region it is located in, along with that region's population change data. We use `st_join()` from the sf package:
+
+```{r}
+#| label: spatial-join
+
+# First, make sure both datasets use the same coordinate reference system
+or_colleges_proj <- st_transform(or_colleges, st_crs(or_wib))
+
+# Spatial join: for each college, find which WIB region it falls in
+colleges_with_wib <- st_join(or_colleges_proj, or_wib)
+
+# View the result
+colleges_with_wib |>
+  st_drop_geometry() |>
+  head(10)
+```
+
+Each college record now includes the `Region`, `pop_2024`, `pop_2019`, and `pct_change` fields from whichever WIB region it falls within. We did not need a shared ID column --- the join was based purely on whether the college's point geometry intersects the WIB region's polygon geometry.
+
+::: {.callout-note}
+## Coordinate Reference Systems
+Spatial joins require both datasets to use the same **CRS** (Coordinate Reference System). The `st_transform()` function re-projects one dataset to match the other. If you forget this step, `st_join()` may produce incorrect results or throw an error. You can check a dataset's CRS with `st_crs()`.
+:::
+
+You can now use this joined data to answer questions like "which WIB region has the most community colleges?" or to map the colleges colored by their region's population growth:
+
+```{r}
+#| label: fig-colleges-by-growth
+#| fig-cap: "Oregon Community Colleges Colored by WIB Region Population Change"
+#| fig-width: 8
+#| fig-height: 6
+#| fig-align: center
+
+tm_shape(or_wib) +
+  tm_polygons(fill = "grey95", col = "grey70", lwd = 0.5) +
+tm_shape(colleges_with_wib) +
+  tm_symbols(
+    fill = "pct_change",
+    fill.scale = tm_scale_continuous(
+      midpoint = 0,
+      values = "brewer.rd_yl_bu"
+    ),
+    fill.legend = tm_legend(title = "WIB Pop. Change (%)"),
+    size = 0.7
+  ) +
+  tm_title("Community Colleges by WIB Region Growth")
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 5: Spatial Join Exploration
+
+Using the `colleges_with_wib` data, count how many community colleges are in each WIB region. Which region has the most? Then create a bar chart (not a map) showing the count by region.
+
+```{r}
+#| label: exercise-5
+#| eval: false
+
+colleges_with_wib |>
+  st_drop_geometry() |>
+  count(______) |>
+  ggplot(aes(x = n, y = reorder(______, n))) +
+  geom_col(fill = "steelblue") +
+  labs(
+    x = "Number of Community Colleges",
+    y = NULL,
+    title = "Community Colleges per WIB Region"
+  ) +
+  theme_minimal()
+```
+:::
+
+## Wrapping Up
+
+Today we covered the foundations of mapping and spatial analysis in R:
+
+-   **tidycensus and tigris** provide ready-to-map geographic data directly from the Census Bureau. Setting `geometry = TRUE` gives you shapefiles alongside your data.
+-   **ggplot2** handles basic choropleth maps with `geom_sf()`, using the same aesthetic mapping syntax you already know.
+-   **tmap** provides purpose-built thematic mapping with powerful scale controls, easy classification methods, and interactive maps with a single function call.
+-   **sf** enables GIS operations like dissolving geometries, reading shapefiles, and performing spatial joins --- all integrated with the dplyr verbs you are already comfortable with.
+
+These tools work together naturally: tidycensus and tigris bring in the data, sf handles spatial operations, and ggplot2 or tmap render the results.
