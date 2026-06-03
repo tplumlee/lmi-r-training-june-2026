@@ -1,0 +1,21 @@
+project:
+  title: "Day 2 Materials"
+  type: default
+  execute-dir: project
+  output-dir: "Tutorials"
+
+author: Tucker Plumlee and Paul Liu
+
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    number-sections: true
+    code-fold: false
+    theme: flatly
+    syntax-highlighting: tango
+    smooth-scroll: true
+    link-external-newwindow: true
+
+
