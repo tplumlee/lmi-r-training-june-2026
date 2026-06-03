@@ -1,0 +1,829 @@
+---
+title: "Digging Deeper: More R Features and Workflows"
+date: 2026-06-03T09:30
+date-format: "dddd, MMMM D, YYYY; h:mmA"
+---
+# Setup and Introdution 
+
+```{r}
+#| label: setup
+#| message: false
+
+library(tidyverse)
+
+# Remember to check your working directory using getwd() set it to your training materials folder if it isn't already using setwd()
+```
+
+In the R Fundamentals and Data Wrangling sessions, we learned enough to load data, reshape it, and produce summaries. This session review and fills in the some of the conceptual foundation underneath that work as well as introduces tools that will become essential as your scripts grow more complex.
+
+We will use the same Oregon QCEW data from earlier sessions:
+
+```{r}
+#| label: load-data
+#| message: false
+
+oregon_qcew <- read_csv("Data/oregon_counties_qcew.csv")
+```
+
+# Data Types
+
+Every value in R has a **type** that determines what you can do with it. Knowing the type of your data helps you avoid errors and understand why certain operations work or fail.
+
+## The Core Types
+
+R has four types you will encounter constantly:
+
+```{r}
+#| label: data-types
+
+# Character (text/strings) — always surrounded by quotes
+county_name <- "Multnomah County"
+class(county_name)
+
+# Integer — whole numbers, created with an L suffix
+employee_count <- 250L
+class(employee_count)
+
+# Numeric (double/float) — numbers with or without decimals
+wage <- 52000.50
+class(wage)
+
+# Logical — TRUE or FALSE (the result of any comparison)
+is_large <- wage > 50000
+is_large
+class(is_large)
+```
+
+You can check a value's type with `class()`, or test for a specific type with the `is.` family of functions:
+
+```{r}
+#| label: type-checking
+
+is.character(county_name)
+is.numeric(wage)
+is.logical(is_large)
+```
+
+## Why Types Matter
+
+Types determine what operations make sense. You can add two numbers but not two character strings:
+
+```{r}
+#| label: type-errors
+#| error: true
+
+# This works
+10 + 20
+
+# This does not
+"10" + "20"
+```
+
+The value `"10"` looks like a number but it is a character string. R treats it as text and has no idea how to add text together with `+`. This kind of type mismatch is one of the most common sources of errors when reading in data --- a column you expect to be numeric might have been read as character because of a stray comma or footnote symbol somewhere in the file.
+
+## Converting Between Types
+
+When types don't match, you can convert with the `as.` functions:
+
+```{r}
+#| label: type-conversion
+
+# Character to numeric
+as.numeric("42")
+
+# Numeric to character
+as.character(42)
+
+# Logical to numeric (TRUE becomes 1, FALSE becomes 0)
+as.numeric(TRUE)
+sum(c(TRUE, FALSE, TRUE, TRUE))   # Counting TRUEs
+```
+
+A particularly useful function from the readr package (loaded with tidyverse) is `parse_number()`, which pulls a number out of messy text:
+
+```{r}
+#| label: parse-number
+
+parse_number("$52,000.50")
+parse_number("approximately 1,200 employees")
+```
+
+This is handy when importing data where numeric columns contain dollar signs, commas, or other formatting characters.
+
+::: {.callout-tip collapse="true"}
+## Exercise 1: Types and Conversion
+
+**Part A:** What type is each of these values? Predict first, then check with `class()`:
+
+```{r}
+#| label: exercise-1a
+#| eval: false
+
+class(3.14)
+class(100L)
+class("TRUE")
+class(TRUE)
+class(NA)
+```
+
+**Part B:** What happens when you run `as.numeric("hello")`? Why?
+
+```{r}
+#| label: exercise-1b
+#| eval: false
+
+as.numeric("hello")
+```
+:::
+
+# Data Structures
+
+Data types describe individual values. **Data structures** describe how values are organized together. You have already worked with vectors and data frames; let's formalize what they are and add lists to the picture.
+
+## Vectors
+
+A **vector** is a sequence of values that are all the **same type**. You create one with `c()`:
+
+```{r}
+#| label: vectors
+
+wages <- c(45000, 52000, 38000, 61000)
+counties <- c("Baker", "Benton", "Clackamas", "Clatsop")
+above_50k <- c(FALSE, TRUE, FALSE, TRUE)
+```
+
+Vectors are the most fundamental structure in R. Even a single value like `wage <- 52000` is actually a vector of length 1. Every column in a data frame is a vector.
+
+If you mix types in a vector, R silently **coerces** everything to the most flexible type. This is like an order of operations where logical → integer → numeric → character:
+
+```{r}
+#| label: coercion
+
+mixed <- c(1, 2, "three")
+mixed
+class(mixed)
+```
+
+The numbers `1` and `2` were quietly converted to character strings. This is a common source of subtle bugs.
+
+## Lists
+
+A **list** is like a vector that *can* hold different types, including other lists, data frames, or even models:
+
+```{r}
+#| label: lists
+
+my_list <- list(
+  name   = "Oregon",
+  pop    = 4240137,
+  counties = c("Baker", "Benton", "Clackamas"),
+  is_state = TRUE
+)
+
+my_list
+```
+
+Lists are the Swiss Army knife of R data structures. Many R functions return lists, and you will often encounter them when working with model outputs, API responses, or nested data.
+
+## Data Frames (and Tibbles)
+
+A **data frame** is a list of vectors that all have the same length, arranged as columns. It is the table structure you have been working with all along:
+
+```{r}
+#| label: dataframe
+
+my_df <- data.frame(
+  county = c("Baker", "Benton", "Clackamas"),
+  employment = c(5000, 45000, 180000),
+  wage = c(42000, 55000, 62000)
+)
+
+my_df
+```
+
+Each column is a vector (same type within the column), and each row is one observation. This is the structure that `read_csv()` returns and that all the tidyverse functions we've worked with so far operate on.
+
+::: {.callout-tip collapse="true"}
+## Exercise 2: Structures
+
+**Part A:** Create a vector of five city names. Then create a vector of five population numbers. Combine them into a data frame named `city_data` using `data.frame()`.
+
+```{r}
+#| label: exercise-2
+#| eval: false
+
+cities <- c()
+populations <- c()
+city_data <- data.frame(city = cities, pop = populations)
+city_data
+```
+
+**Part B:** Create a list that contains your name (character), your age (numeric), and a vector of three hobbies (character vector). Print it.
+:::
+
+# Indexing and Subsetting
+
+**Indexing** is how you pull out specific pieces of a data structure. This is fundamental --- even though tidyverse functions like `filter()` and `select()` handle most of this for data frames, you will need indexing when working with vectors, lists, and in programming contexts like loops and functions (which we'll cover later today, time allowing).
+
+## Indexing Vectors with `[]`
+
+Use square brackets with a position number to retrieve a value at that position number:
+
+```{r}
+#| label: vector-indexing
+
+wages <- c(45000, 52000, 38000, 61000)
+
+# Single element
+wages[1]
+wages[3]
+
+# Multiple elements
+wages[c(1, 3)]
+
+# All except one
+wages[-2]
+
+# Logical indexing: elements where a condition is TRUE
+wages[wages > 40000]
+```
+
+## Indexing Lists with `[]` and `[[]]`
+
+Lists use two kinds of brackets, and the distinction between the two is important:
+
+```{r}
+#| label: list-indexing
+
+my_list <- list(name = "Oregon", pop = 4240137, counties = c("Baker", "Benton"))
+
+# Single brackets return a *sub-list* (still a list)
+my_list[1]
+class(my_list[1])
+
+# Double brackets extract the *element itself*
+my_list[[1]]
+class(my_list[[1]])
+
+# Named access with double brackets
+my_list[["pop"]]
+```
+
+Think of a list like a train: `[1]` gives you the first train car (still a train car), while `[[1]]` gives you the first row *inside* the first car.
+
+## Indexing Data Frames with `$` and `[]`
+
+Data frames support several indexing styles:
+
+```{r}
+#| label: df-indexing
+
+# The $ operator extracts a single column as a vector
+oregon_qcew$avg_employment[1:5]
+
+# This is the most common way to grab a column outside of a tidyverse pipeline
+mean(oregon_qcew$avg_annual_wage)
+```
+
+You can also use bracket notation with `[row, column]`:
+
+```{r}
+#| label: df-bracket-indexing
+
+# Single cell: row 1, column 3
+oregon_qcew[1, 3]
+
+# Entire row 1
+oregon_qcew[1, ]
+
+# Entire column by name
+oregon_qcew[, "avg_employment"] |> head()
+
+# First 5 rows of two columns
+oregon_qcew[1:5, c("county", "avg_employment")]
+```
+
+The `$` syntax is especially useful for quick calculations and when passing a column to a function that expects a plain vector rather than a data frame:
+
+```{r}
+#| label: dollar-uses
+
+# Calculate the range of annual wages
+max(oregon_qcew$avg_annual_wage) - min(oregon_qcew$avg_annual_wage)
+
+# Use in a base R function
+table(oregon_qcew$county)[1:5]
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 3: Indexing Practice
+
+```{r}
+#| label: exercise-3-setup
+
+fruits <- c("apple", "banana", "cherry", "date", "elderberry")
+info <- list(fruit = "apple", color = "red", seeds = 5)
+```
+
+**Part A:** Extract the third element of `fruits`. Then extract the first and fifth elements together.
+
+**Part B:** Extract the `color` element from `info` using `$` notation. Then extract it using `[[]]` notation.
+
+**Part C:** Use `$` to find the `mean()` of the `establishments` column in `oregon_qcew`.
+
+```{r}
+#| label: exercise-3
+#| eval: false
+
+# Part A
+fruits[]
+fruits[c()]
+
+# Part B
+info$
+info[[]]
+
+# Part C
+mean()
+```
+:::
+
+# Handling Missing Values (NA)
+
+Real data almost always has gaps (i.e., empty cells in a spreadsheet). In R, missing values are represented by `NA` (Not Available). Understanding how `NA` behaves is critical because a single missing value can silently derail your calculations.
+
+## How NA Works
+
+`NA` is contagious --- any operation involving `NA` returns `NA`:
+
+```{r}
+#| label: na-contagious
+
+x <- c(10, 20, NA, 40)
+
+sum(x)
+mean(x)
+```
+
+R is being cautious: it does not know what the missing value is, so it cannot give you a definitive sum or mean. You saw `na.rm = TRUE` in passing during earlier sessions --- now you know why it is necessary:
+
+```{r}
+#| label: na-rm
+
+sum(x, na.rm = TRUE)
+mean(x, na.rm = TRUE)
+```
+
+## Detecting Missing Values
+
+You cannot test for `NA` with `==` because `NA == NA` returns `NA` (the logic being "I don't know if this unknown thing equals that unknown thing"). Use `is.na()` instead:
+
+```{r}
+#| label: detect-na
+
+is.na(x)
+
+# Count missing values in a column
+sum(is.na(oregon_qcew$avg_annual_wage))
+```
+
+## Removing and Replacing NAs in Pipelines
+
+The tidyverse provides some useful tools for working with NAs inside data pipelines:
+
+```{r}
+#| label: na-tidyverse
+
+# drop_na() removes rows with NA in specified columns
+nrow(oregon_qcew)
+
+oregon_qcew |>
+  drop_na(avg_annual_wage) |>
+  nrow()
+
+# thankfully, we don't have to worry about any NA values in our QCEW data (because suppressions were instead replaced with 0's)
+
+# replace_na() substitutes a value for NA
+x_filled <- replace_na(x, 0)
+x_filled
+
+# coalesce() picks the first non-NA value from multiple columns
+# Useful when you have a "primary" and "backup" column
+tibble(primary = c(10, NA, 30), backup = c(100, 200, 300)) |>
+  mutate(result = coalesce(primary, backup))
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 4: Working with NAs
+
+Create a vector `temps <- c(72, 68, NA, 75, NA, 80)`. Calculate the mean, handling the NAs properly. Then count how many NAs are in the vector.
+
+```{r}
+#| label: exercise-4
+#| eval: false
+
+temps <- c(72, 68, NA, 75, NA, 80)
+mean()
+sum()
+```
+:::
+
+# Tidyverse vs. Base R
+
+You have been learning the **tidyverse** way of doing things, but it is worth understanding that there is an older, built-in way of doing many of the same tasks in what is called **base R**. Neither is "better" --- they are two dialects of the same language, and you will encounter both in the wild.
+
+## Philosophy
+
+Base R came first and uses a more general-purpose programming style. The tidyverse, developed starting around 2014, was designed specifically for data analysis and emphasizes readable, composable pipelines.
+
+| Concept | Base R | Tidyverse |
+|---------|--------|-----------|
+| Subset rows | `df[df$col > 5, ]` | `df |> filter(col > 5)` |
+| Select columns | `df[, c("a", "b")]` | `df |> select(a, b)` |
+| Create columns | `df$new <- df$x + 1` | `df |> mutate(new = x + 1)` |
+| Group summaries | `aggregate(x ~ group, df, mean)` | `df |> group_by(group) |> summarize(mean(x))` |
+| Read CSV | `read.csv("file.csv")` | `read_csv("file.csv")` |
+
+The tidyverse version tends to be more readable for data tasks because the pipe lets you read the steps top to bottom, like a recipe. Base R indexing is more compact and does not require loading packages.
+
+## Tibbles vs. Data Frames
+
+A **tibble** is the tidyverse's version of a data frame. When you use `read_csv()`, you get a tibble. It behaves almost identically to a base R data frame, with a few differences:
+
+```{r}
+#| label: tibble-vs-df
+
+# Base R data frame
+base_df <- data.frame(
+  name = c("Alice", "Bob", "Carol"),
+  score = c(90, 85, 92)
+)
+
+# Tibble
+tidy_tb <- tibble(
+  name = c("Alice", "Bob", "Carol"),
+  score = c(90, 85, 92)
+)
+
+# Printing: tibbles show type information and truncate neatly
+tidy_tb
+base_df
+```
+
+Key differences: tibbles print more informatively (showing types and truncating large datasets instead of flooding your console), they never silently convert strings to factors, and they give stricter error messages when you try to access a column that does not exist. In practice, tibbles and data frames are interchangeable for most tasks.
+
+## The Two Pipes: `%>%` and `|>`
+
+The Data Wrangling session used `%>%` (from the `magrittr` package, loaded with tidyverse). R 4.1+ added a **native pipe** `|>` that is built into R and does not require any package:
+
+```{r}
+#| label: pipes
+
+# magrittr pipe (requires tidyverse or magrittr)
+oregon_qcew %>% nrow()
+
+# Native pipe (built into R, no packages needed)
+oregon_qcew |> nrow()
+```
+
+They work the same way for most tasks. The walkthroughs for this training use `|>` because it is the direction R is heading and does not depend on any package. You will see `%>%` in older code and tutorials --- both are fine.
+
+# More mutate() Tricks
+
+## Removing Variables Inside mutate()
+
+In the Data Wrangling session you learned to drop columns with `select(-col)`. You can also remove a column inside `mutate()` by setting it to `NULL`. This is useful when you want to create new columns and clean up old ones in the same step:
+
+```{r}
+#| label: mutate-remove
+
+oregon_qcew |>
+  mutate(
+    wage_thousands = avg_annual_wage / 1000,
+    avg_annual_wage = NULL
+  ) |>
+  select(county, naics, wage_thousands) |>
+  head()
+```
+
+The original `avg_annual_wage` column is gone, and `wage_thousands` takes its place. You can also use this to remove helper columns you created mid-pipeline.
+
+## Applying Functions Across Multiple Columns with `across()`
+
+Often you need to do the same operation on several columns at once. Instead of writing out each one, use `across()`:
+
+```{r}
+#| label: across
+
+# Round multiple numeric columns at once
+oregon_qcew |>
+  mutate(across(c(avg_wkly_wage, avg_annual_wage), \(x) round(x, -2))) |>
+  select(county, avg_wkly_wage, avg_annual_wage) |>
+  head()
+
+# Summarize multiple columns in one step
+oregon_qcew |>
+  summarize(across(c(establishments, avg_employment), 
+                   list(total = sum, avg = mean)))
+```
+
+The first argument to `across()` is a selection of columns (you can use the same helpers as in `select()`, such as `starts_with()` or `where(is.numeric)`). The second argument is the function (or list of functions) to apply.
+
+::: {.callout-tip collapse="true"}
+## Exercise 5: mutate() and across()
+
+**Part A:** Using the `oregon_qcew` data, create a new column `emp_per_estab` (employment per establishment), then remove the `establishments` column, all inside one `mutate()` call.
+
+```{r}
+#| label: exercise-5a
+#| eval: false
+
+oregon_qcew |>
+  mutate(
+    emp_per_estab = ______,
+    ______ = NULL
+  ) |>
+  head()
+```
+
+**Part B:** Use `summarize()` with `across()` and `where(is.numeric)` to calculate the `mean` of every numeric column in `oregon_qcew`.
+
+```{r}
+#| label: exercise-5b
+#| eval: false
+
+oregon_qcew |>
+  summarize(across(where(______), ______))
+```
+:::
+
+## Working with Strings Using stringr
+
+Text data is messy: extra spaces, inconsistent capitalization, codes embedded in names. The `stringr` package (loaded with tidyverse) provides a consistent set of functions for working with strings. They all start with `str_`, making them easy to find and remember.
+
+### Detecting Patterns
+
+`str_detect()` returns `TRUE` or `FALSE` for whether a pattern appears in a string. This is extremely useful inside `filter()`:
+
+```{r}
+#| label: str-detect
+
+# Find all counties with "County" in the name (should be all of them)
+oregon_qcew |>
+  filter(str_detect(county, "Lane")) |>
+  head()
+```
+
+### Replacing and Removing Text
+
+```{r}
+#| label: str-replace
+
+# Remove a consistent suffix from county names
+oregon_qcew |>
+  mutate(county_short = str_remove(county, " County, Oregon")) |>
+  select(county, county_short) |>
+  distinct() |>
+  head()
+
+# Replace text
+str_replace("avg_annual_wage", "avg_", "average_")
+
+# Remove all non-numeric characters
+str_remove_all("$52,000", "[^0-9]")
+```
+
+### Changing Case
+
+```{r}
+#| label: str-case
+
+str_to_upper("multnomah county")
+str_to_lower("MULTNOMAH COUNTY")
+str_to_title("multnomah county, oregon")
+```
+
+### Extracting and Splitting
+
+```{r}
+#| label: str-extract
+
+# Extract the first word
+str_extract("Baker County, Oregon", "^\\w+")
+
+# Extract a number from text
+str_extract("NAICS 3254: Pharmaceutical", "\\d+")
+
+# Split a string
+str_split("Baker County, Oregon", ", ")
+```
+
+### Padding and Trimming
+
+```{r}
+#| label: str-pad-trim
+
+# Pad FIPS codes to consistent width (common with county codes)
+str_pad(c("1", "23", "456"), width = 3, pad = "0")
+
+# Trim whitespace from both ends
+str_trim("  extra spaces  ")
+str_squish("  too   many    spaces  ")
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 6: stringr Practice
+
+**Part A:** Use `mutate()` and `str_remove()` to create a column called `county_clean` that removes `", Oregon"` from the `county` column. Then use `str_to_upper()` to create an all-caps version.
+
+```{r}
+#| label: exercise-6a
+#| eval: false
+
+oregon_qcew |>
+  mutate(
+    county_clean = str_remove(county, ______),
+    county_upper = str_to_upper(______)
+  ) |>
+  select(county, county_clean, county_upper) |>
+  distinct()
+```
+
+**Part B:** Filter the data to only rows where the county name contains the word "Washington". (Careful --- does any county name contain "Washington" as part of a longer word?)
+
+```{r}
+#| label: exercise-6b
+#| eval: false
+
+oregon_qcew |>
+  filter(str_detect(county, ______))
+```
+:::
+
+## Additional Essential Tidyverse Functions
+
+These functions fill common gaps between the core verbs you learned in Data Wrangling.
+
+### `count()`: Quick Frequency Tables
+
+`count()` is a shortcut for `group_by() |> summarize(n = n())`. It counts how many rows exist for each value of a variable:
+
+```{r}
+#| label: count
+
+# How many industries per county?
+oregon_qcew |>
+  count(county, sort = TRUE) |>
+  head()
+```
+
+Add `sort = TRUE` to automatically arrange from most to fewest. You can count by multiple variables:
+
+```{r}
+#| label: count-multi
+#| eval: false
+
+# If the data had a year column, you could count by county and year:
+# oregon_qcew |> count(county, year)
+```
+
+### `distinct()`: Unique Rows
+
+`distinct()` returns only the unique values of specified columns. It is the tidyverse equivalent of `unique()`:
+
+```{r}
+#| label: distinct
+
+# List of unique counties
+oregon_qcew |>
+  distinct(county) |>
+  head()
+
+# Count unique counties
+oregon_qcew |>
+  distinct(county) |>
+  nrow()
+```
+
+By default, `distinct()` drops all columns not named. Add `.keep_all = TRUE` to keep the full row (it keeps the first occurrence):
+
+```{r}
+#| label: distinct-keep-all
+
+oregon_qcew |>
+  distinct(county, .keep_all = TRUE) |>
+  head()
+```
+
+### `slice()` and Friends: Rows by Position
+
+While `filter()` selects rows by condition, the `slice()` family selects rows by position or rank:
+
+```{r}
+#| label: slice
+
+# First 3 rows
+oregon_qcew |> slice(1:3)
+
+# Last 3 rows
+oregon_qcew |> slice_tail(n = 3)
+
+# Row with the highest avg_annual_wage
+oregon_qcew |> slice_max(avg_annual_wage, n = 1)
+
+# Row with the lowest avg_annual_wage
+oregon_qcew |> slice_min(avg_annual_wage, n = 1)
+
+# Random sample of 5 rows
+oregon_qcew |> slice_sample(n = 5)
+```
+
+`slice_max()` and `slice_min()` are especially useful combined with `group_by()` --- for example, finding the highest-paying industry in each county:
+
+```{r}
+#| label: slice-grouped
+
+oregon_qcew |>
+  group_by(county) |>
+  slice_max(avg_annual_wage, n = 1) |>
+  ungroup() |>
+  select(county, naics, avg_annual_wage) |>
+  head(10)
+```
+
+### `pull()`: Extract a Column as a Vector
+
+`pull()` extracts a single column from a data frame as a plain vector. This is the pipe-friendly equivalent of `$`:
+
+```{r}
+#| label: pull
+
+# These two are equivalent:
+oregon_qcew |> pull(avg_annual_wage) |> mean()
+mean(oregon_qcew$avg_annual_wage)
+```
+
+`pull()` is useful at the end of a pipeline when you need a vector for a function that does not accept a data frame.
+
+### `n_distinct()`: Count Unique Values Inside summarize()
+
+While `n()` counts total rows in a group, `n_distinct()` counts unique values of a column:
+
+```{r}
+#| label: n-distinct
+#| eval: false
+
+# If your data has a county column and a year column:
+# oregon_qcew |>
+#   summarize(
+#     n_rows = n(),
+#     n_counties = n_distinct(county)
+#   )
+```
+
+::: {.callout-tip collapse="true"}
+## Exercise 7: Putting It Together
+
+Using the `oregon_qcew` data:
+
+**Part A:** Use `count()` to find the 5 counties with the most industry records.
+
+**Part B:** Use `slice_max()` within a `group_by()` to find the highest-employment industry in each of the first 5 counties (alphabetically). Hint: use `slice()` after a separate `distinct()` call or filter to the first 5 counties first.
+
+**Part C:** How many distinct NAICS codes are in the dataset? Use `distinct()` or `n_distinct()`.
+
+```{r}
+#| label: exercise-7
+#| eval: false
+
+# Part A
+oregon_qcew |>
+  count(______) |>
+  slice_max(n, n = 5)
+
+# Part B
+oregon_qcew |>
+  filter(county %in% (oregon_qcew |> distinct(county) |> slice(1:5) |> pull(county))) |>
+  group_by(______) |>
+  slice_max(______, n = 1) |>
+  select(county, naics, avg_employment)
+
+# Part C
+oregon_qcew |> summarize(n_codes = n_distinct(______))
+```
+:::
+
+## Wrapping Up
+
+This session covered the conceptual building blocks that support everything else you do in R:
+
+-   **Data types** (character, numeric, integer, logical) determine what operations make sense. Use `class()` to check and `as.` functions to convert.
+-   **Data structures** (vectors, lists, data frames) organize values. Vectors hold same-type elements, lists hold anything, and data frames are the table structure for analysis.
+-   **Indexing** with `[]`, `[[]]`, and `$` lets you extract specific pieces from any structure.
+-   **NA values** require deliberate handling with `na.rm`, `is.na()`, `drop_na()`, and `replace_na()`.
+-   **Factors** give you control over categorical data ordering, especially important for charts.
+-   **Tibbles** are the tidyverse's version of data frames; `|>` is R's native pipe alongside tidyverse's `%>%`.
+-   **stringr** functions (`str_detect`, `str_remove`, `str_replace`, `str_to_upper`, `str_pad`) make text manipulation clean and consistent.
+-   **count()**, **distinct()**, **slice()**, **pull()**, **across()**, and removing columns with `mutate(col = NULL)` round out your tidyverse toolkit.
+
+These concepts become more important as your scripts grow from simple summaries to full analytical pipelines. The more comfortable you are with types, structures, and indexing, the faster you will be able to diagnose problems when something goes wrong.
