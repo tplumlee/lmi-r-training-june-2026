@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Tucker Plumlee and Paul Liu">
+
+<title>Accessing Public Data via APIs</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/clipboard/clipboard.min.js"></script>
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/quarto.js"></script>
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/popper.min.js"></script>
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/anchor.min.js"></script>
+<link href="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="08_Day-2_Accessing-Data-via-API_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="08_Day-2_Accessing-Data-via-API_files/libs/bootstrap/bootstrap-0b3b9638000aa634054a1a0e4b24ad6b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#api-basics" id="toc-api-basics" class="nav-link active" data-scroll-target="#api-basics"><span class="header-section-number">1</span> API Basics</a>
+  <ul class="collapse">
+  <li><a href="#what-is-an-api-why-use-one" id="toc-what-is-an-api-why-use-one" class="nav-link" data-scroll-target="#what-is-an-api-why-use-one"><span class="header-section-number">1.1</span> What is an API? Why use one?</a></li>
+  <li><a href="#what-does-an-api-look-like" id="toc-what-does-an-api-look-like" class="nav-link" data-scroll-target="#what-does-an-api-look-like"><span class="header-section-number">1.2</span> What does an API look like?</a></li>
+  <li><a href="#api-wrapper-packages" id="toc-api-wrapper-packages" class="nav-link" data-scroll-target="#api-wrapper-packages"><span class="header-section-number">1.3</span> API “Wrapper” Packages</a></li>
+  </ul></li>
+  <li><a href="#tidycensus" id="toc-tidycensus" class="nav-link" data-scroll-target="#tidycensus"><span class="header-section-number">2</span> <code>tidycensus</code></a>
+  <ul class="collapse">
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview"><span class="header-section-number">2.1</span> Overview</a></li>
+  <li><a href="#getting-started" id="toc-getting-started" class="nav-link" data-scroll-target="#getting-started"><span class="header-section-number">2.2</span> Getting Started</a></li>
+  <li><a href="#retrieving-acs-data-for-oregon-counties" id="toc-retrieving-acs-data-for-oregon-counties" class="nav-link" data-scroll-target="#retrieving-acs-data-for-oregon-counties"><span class="header-section-number">2.3</span> Retrieving ACS Data for Oregon Counties</a></li>
+  <li><a href="#other-available-datasets" id="toc-other-available-datasets" class="nav-link" data-scroll-target="#other-available-datasets"><span class="header-section-number">2.4</span> Other Available Datasets</a></li>
+  </ul></li>
+  <li><a href="#using-blsapi" id="toc-using-blsapi" class="nav-link" data-scroll-target="#using-blsapi"><span class="header-section-number">3</span> Using <code>blsAPI</code></a>
+  <ul class="collapse">
+  <li><a href="#overview-1" id="toc-overview-1" class="nav-link" data-scroll-target="#overview-1"><span class="header-section-number">3.1</span> Overview</a></li>
+  <li><a href="#getting-started-1" id="toc-getting-started-1" class="nav-link" data-scroll-target="#getting-started-1"><span class="header-section-number">3.2</span> Getting Started</a></li>
+  <li><a href="#retrieving-laus-data-for-oregon-counties" id="toc-retrieving-laus-data-for-oregon-counties" class="nav-link" data-scroll-target="#retrieving-laus-data-for-oregon-counties"><span class="header-section-number">3.3</span> Retrieving LAUS Data for Oregon Counties</a></li>
+  <li><a href="#other-available-bls-datasets" id="toc-other-available-bls-datasets" class="nav-link" data-scroll-target="#other-available-bls-datasets"><span class="header-section-number">3.4</span> Other Available BLS Datasets</a></li>
+  </ul></li>
+  <li><a href="#wrapping-up" id="toc-wrapping-up" class="nav-link" data-scroll-target="#wrapping-up"><span class="header-section-number">4</span> Wrapping Up</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Accessing Public Data via APIs</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Tucker Plumlee and Paul Liu </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">Wednesday, June 3, 2026; 1:00PM</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="api-basics" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> API Basics</h1>
+<section id="what-is-an-api-why-use-one" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="what-is-an-api-why-use-one"><span class="header-section-number">1.1</span> What is an API? Why use one?</h2>
+<p>In general, an <strong>API</strong> (Application Programming Interface) is a way for two software systems to talk to each other. In the context of data, an API provides a structured way to request specific data from an organization’s servers and get it back in a predictable format.</p>
+<p>Without an API, retrieving data from the Census Bureau or the Bureau of Labor Statistics typically means navigating a website, clicking through a data tool, selecting your options, and downloading a CSV or Excel file. This process is manual, time-consuming, and hard to reproduce. If the data updates next quarter, you have to do it all over again.</p>
+<p>With an API, you write code that sends a request and receives data back directly into your R environment. This means your entire data retrieval process is scripted, reproducible, and can be re-run whenever the data is updated.</p>
+</section>
+<section id="what-does-an-api-look-like" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="what-does-an-api-look-like"><span class="header-section-number">1.2</span> What does an API look like?</h2>
+<p>API providers publish <strong>documentation</strong> that describes what data is available, how to request it, and what format the response takes.</p>
+<p>As an example, let’s take a look at the documentation for the Bureau of Labor Statistics’ API: <a href="https://www.bls.gov/developers/api_signature_v2.htm#multiple" class="uri">https://www.bls.gov/developers/api_signature_v2.htm#multiple</a></p>
+<p>There’s a lot of jargon here that, for most of you, is probably pretty foreign: HTTP types, header, payload, JSON…</p>
+</section>
+<section id="api-wrapper-packages" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="api-wrapper-packages"><span class="header-section-number">1.3</span> API “Wrapper” Packages</h2>
+<p>Obviously, if you aren’t already fluent in the language of internet protocols, this can present a pretty high barrier for using an API to access the data you want. This is where <strong>wrapper packages</strong> come in.</p>
+<p>Thankfully, there is a kind and helpful community of developers out there who have written packages for R (and Python, etc.) that “wrap” all the complexity of constructing API requests, sending them, and parsing the responses in functions that look more familiar and are easier to use. You get tidy data frames back, ready for analysis with dplyr, ggplot2, and the rest of the tidyverse.</p>
+<p>Today we will work with two wrapper packages:</p>
+<ul>
+<li><strong>tidycensus</strong> — for accessing U.S. Census Bureau data</li>
+<li><strong>blsAPI</strong> — for accessing Bureau of Labor Statistics data</li>
+</ul>
+<p>If we have time, we’ll also look at one provided by IPUMS, which integrates microdata from surveys such as the Current Population Survey (CPS) and American Community Survey (ACS).</p>
+</section>
+</section>
+<section id="tidycensus" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> <code>tidycensus</code></h1>
+<section id="overview" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="overview"><span class="header-section-number">2.1</span> Overview</h2>
+<p>The <a href="https://walker-data.com/tidycensus/index.html">tidycensus</a> package is a “wrapper” around the Census API for a variety of datasets including the decennial census, ACS, and population estimates. -Kyle Walker, one of the developers of the package, has also written a book, <a href="https://walker-data.com/census-r/"><em>Analyzing US Census Data: Methods, Maps, and Models in R</em></a> that is available for free online: <a href="https://walker-data.com/census-r/" class="uri">https://walker-data.com/census-r/</a>.</p>
+</section>
+<section id="getting-started" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="getting-started"><span class="header-section-number">2.2</span> Getting Started</h2>
+<p>We’ll begin by ensuring that <code>tidycensus</code> is installed and loaded into our environment.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages('tidycensus')</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Also make sure we have tidyverse if it isn't already loaded</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.0     ✔ readr     2.1.6
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.1     ✔ tibble    3.3.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.2
+✔ purrr     1.2.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+</div>
+<p>Now, we need to save our API key somewhere that the package can easily access it without us needing to copy and paste it every time we make a request. Luckily, <code>tidycensus</code> makes this easy for us by providing a function that will automatically save it to our <code>.Renviron</code> file (this file stores many values that R or certain packages may need to regularly access behind the scenes).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace "YOUR_KEY" with the key you received from Census</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">census_api_key</span>(<span class="st">"YOUR_KEY"</span>, <span class="at">install =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Reload R environment </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">readRenviron</span>(<span class="st">"~/.Renviron"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># You can check it with:</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.getenv</span>(<span class="st">"CENSUS_API_KEY"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Security Best Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Never hardcode your API key directly in a script that you share or commit to version control. Using <code>census_api_key(install = TRUE)</code> stores the key in your personal <code>.Renviron</code> file, keeping it out of your code.</p>
+</div>
+</div>
+</section>
+<section id="retrieving-acs-data-for-oregon-counties" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="retrieving-acs-data-for-oregon-counties"><span class="header-section-number">2.3</span> Retrieving ACS Data for Oregon Counties</h2>
+<p>Let’s walk through a practical example: comparing population change across Oregon counties using the American Community Survey, specifically the 5-year estimates.</p>
+<section id="step-1-get-total-population-by-county" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="step-1-get-total-population-by-county"><span class="header-section-number">2.3.1</span> Step 1: Get Total Population by County</h3>
+<p>The <code>get_acs()</code> function retrieves data from the American Community Survey. We need to specify a few things: the geography level, the state, the survey year, and the variable(s) we want. ACS provides data for thousands of variables with unique codes. Thankfully, <code>tidycensus</code> provides a helpful function for browsing variables (for ACS and many other Census datasets): <code>load_variables()</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Browse the available ACS 5-year variables for 2024</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># cache stores the results so we don't have to wait for them to load every time</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>vars_2024 <span class="ot">&lt;-</span> <span class="fu">load_variables</span>(<span class="dv">2024</span>, <span class="st">"acs5"</span>, <span class="at">cache =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(vars_2024)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>With some searching we can see that the variable code for total population is <strong>B01003_001</strong>.</p>
+<p>With variable code in hand, let’s pull total population for Oregon counties from two time periods. We’ll start with the 5-year estimates from 2019.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2015-2019 5-year ACS estimates</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>or_pop_2019 <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"county"</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">"B01003_001"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">"OR"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2019</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">geometry =</span> <span class="cn">FALSE</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2015-2019 5-year ACS</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_pop_2019)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  GEOID NAME                     variable   estimate   moe
+  &lt;chr&gt; &lt;chr&gt;                    &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt;
+1 41001 Baker County, Oregon     B01003_001    16019    NA
+2 41003 Benton County, Oregon    B01003_001    91107    NA
+3 41005 Clackamas County, Oregon B01003_001   410463    NA
+4 41007 Clatsop County, Oregon   B01003_001    39102    NA
+5 41009 Columbia County, Oregon  B01003_001    51375    NA
+6 41011 Coos County, Oregon      B01003_001    63686    NA</code></pre>
+</div>
+</div>
+<p>Notice the structure: each row represents one county, with the <code>estimate</code> column containing the population value and <code>moe</code> containing the margin of error.</p>
+<p>When pulling data for 2024 we will also set <code>geometry = TRUE</code> to download the county shapefiles provided through Census’ TIGER/Line program.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2020-2024 5-year ACS estimates</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>or_pop_2024 <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"county"</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">"B01003_001"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">"OR"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2024</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">geometry =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting data from the 2020-2024 5-year ACS</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Downloading feature geometry from the Census website.  To cache shapefiles for use in future sessions, set `options(tigris_use_cache = TRUE)`.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |                                                                      |   1%
+  |                                                                            
+  |=                                                                     |   1%
+  |                                                                            
+  |=                                                                     |   2%
+  |                                                                            
+  |==                                                                    |   2%
+  |                                                                            
+  |==                                                                    |   3%
+  |                                                                            
+  |==                                                                    |   4%
+  |                                                                            
+  |===                                                                   |   4%
+  |                                                                            
+  |===                                                                   |   5%
+  |                                                                            
+  |====                                                                  |   5%
+  |                                                                            
+  |====                                                                  |   6%
+  |                                                                            
+  |=====                                                                 |   6%
+  |                                                                            
+  |=====                                                                 |   7%
+  |                                                                            
+  |=====                                                                 |   8%
+  |                                                                            
+  |======                                                                |   8%
+  |                                                                            
+  |======                                                                |   9%
+  |                                                                            
+  |=======                                                               |   9%
+  |                                                                            
+  |=======                                                               |  10%
+  |                                                                            
+  |=======                                                               |  11%
+  |                                                                            
+  |========                                                              |  11%
+  |                                                                            
+  |========                                                              |  12%
+  |                                                                            
+  |=========                                                             |  12%
+  |                                                                            
+  |=========                                                             |  13%
+  |                                                                            
+  |=========                                                             |  14%
+  |                                                                            
+  |==========                                                            |  14%
+  |                                                                            
+  |==========                                                            |  15%
+  |                                                                            
+  |===========                                                           |  15%
+  |                                                                            
+  |===========                                                           |  16%
+  |                                                                            
+  |============                                                          |  17%
+  |                                                                            
+  |============                                                          |  18%
+  |                                                                            
+  |=============                                                         |  18%
+  |                                                                            
+  |=============                                                         |  19%
+  |                                                                            
+  |==============                                                        |  19%
+  |                                                                            
+  |==============                                                        |  20%
+  |                                                                            
+  |==============                                                        |  21%
+  |                                                                            
+  |===============                                                       |  21%
+  |                                                                            
+  |===============                                                       |  22%
+  |                                                                            
+  |================                                                      |  22%
+  |                                                                            
+  |================                                                      |  23%
+  |                                                                            
+  |================                                                      |  24%
+  |                                                                            
+  |=================                                                     |  24%
+  |                                                                            
+  |=================                                                     |  25%
+  |                                                                            
+  |==================                                                    |  25%
+  |                                                                            
+  |==================                                                    |  26%
+  |                                                                            
+  |===================                                                   |  26%
+  |                                                                            
+  |===================                                                   |  27%
+  |                                                                            
+  |===================                                                   |  28%
+  |                                                                            
+  |====================                                                  |  28%
+  |                                                                            
+  |====================                                                  |  29%
+  |                                                                            
+  |=====================                                                 |  29%
+  |                                                                            
+  |=====================                                                 |  30%
+  |                                                                            
+  |=====================                                                 |  31%
+  |                                                                            
+  |======================                                                |  31%
+  |                                                                            
+  |======================                                                |  32%
+  |                                                                            
+  |=======================                                               |  32%
+  |                                                                            
+  |=======================                                               |  33%
+  |                                                                            
+  |========================                                              |  34%
+  |                                                                            
+  |========================                                              |  35%
+  |                                                                            
+  |=========================                                             |  35%
+  |                                                                            
+  |=========================                                             |  36%
+  |                                                                            
+  |==========================                                            |  36%
+  |                                                                            
+  |==========================                                            |  37%
+  |                                                                            
+  |==========================                                            |  38%
+  |                                                                            
+  |===========================                                           |  38%
+  |                                                                            
+  |===========================                                           |  39%
+  |                                                                            
+  |============================                                          |  39%
+  |                                                                            
+  |============================                                          |  40%
+  |                                                                            
+  |============================                                          |  41%
+  |                                                                            
+  |=============================                                         |  41%
+  |                                                                            
+  |=============================                                         |  42%
+  |                                                                            
+  |==============================                                        |  42%
+  |                                                                            
+  |==============================                                        |  43%
+  |                                                                            
+  |==============================                                        |  44%
+  |                                                                            
+  |===============================                                       |  44%
+  |                                                                            
+  |===============================                                       |  45%
+  |                                                                            
+  |================================                                      |  45%
+  |                                                                            
+  |================================                                      |  46%
+  |                                                                            
+  |=================================                                     |  47%
+  |                                                                            
+  |=================================                                     |  48%
+  |                                                                            
+  |==================================                                    |  48%
+  |                                                                            
+  |==================================                                    |  49%
+  |                                                                            
+  |===================================                                   |  49%
+  |                                                                            
+  |===================================                                   |  50%
+  |                                                                            
+  |===================================                                   |  51%
+  |                                                                            
+  |====================================                                  |  51%
+  |                                                                            
+  |====================================                                  |  52%
+  |                                                                            
+  |=====================================                                 |  52%
+  |                                                                            
+  |=====================================                                 |  53%
+  |                                                                            
+  |======================================                                |  54%
+  |                                                                            
+  |======================================                                |  55%
+  |                                                                            
+  |=======================================                               |  55%
+  |                                                                            
+  |=======================================                               |  56%
+  |                                                                            
+  |========================================                              |  56%
+  |                                                                            
+  |========================================                              |  57%
+  |                                                                            
+  |========================================                              |  58%
+  |                                                                            
+  |=========================================                             |  58%
+  |                                                                            
+  |=========================================                             |  59%
+  |                                                                            
+  |==========================================                            |  59%
+  |                                                                            
+  |==========================================                            |  60%
+  |                                                                            
+  |==========================================                            |  61%
+  |                                                                            
+  |===========================================                           |  61%
+  |                                                                            
+  |===========================================                           |  62%
+  |                                                                            
+  |============================================                          |  62%
+  |                                                                            
+  |============================================                          |  63%
+  |                                                                            
+  |=============================================                         |  64%
+  |                                                                            
+  |=============================================                         |  65%
+  |                                                                            
+  |==============================================                        |  65%
+  |                                                                            
+  |==============================================                        |  66%
+  |                                                                            
+  |===============================================                       |  66%
+  |                                                                            
+  |===============================================                       |  67%
+  |                                                                            
+  |===============================================                       |  68%
+  |                                                                            
+  |================================================                      |  68%
+  |                                                                            
+  |================================================                      |  69%
+  |                                                                            
+  |=================================================                     |  69%
+  |                                                                            
+  |=================================================                     |  70%
+  |                                                                            
+  |=================================================                     |  71%
+  |                                                                            
+  |==================================================                    |  71%
+  |                                                                            
+  |==================================================                    |  72%
+  |                                                                            
+  |===================================================                   |  72%
+  |                                                                            
+  |===================================================                   |  73%
+  |                                                                            
+  |====================================================                  |  74%
+  |                                                                            
+  |====================================================                  |  75%
+  |                                                                            
+  |=====================================================                 |  75%
+  |                                                                            
+  |=====================================================                 |  76%
+  |                                                                            
+  |======================================================                |  77%
+  |                                                                            
+  |======================================================                |  78%
+  |                                                                            
+  |=======================================================               |  78%
+  |                                                                            
+  |=======================================================               |  79%
+  |                                                                            
+  |========================================================              |  79%
+  |                                                                            
+  |========================================================              |  80%
+  |                                                                            
+  |========================================================              |  81%
+  |                                                                            
+  |=========================================================             |  81%
+  |                                                                            
+  |=========================================================             |  82%
+  |                                                                            
+  |==========================================================            |  82%
+  |                                                                            
+  |==========================================================            |  83%
+  |                                                                            
+  |==========================================================            |  84%
+  |                                                                            
+  |===========================================================           |  84%
+  |                                                                            
+  |===========================================================           |  85%
+  |                                                                            
+  |============================================================          |  85%
+  |                                                                            
+  |============================================================          |  86%
+  |                                                                            
+  |=============================================================         |  86%
+  |                                                                            
+  |=============================================================         |  87%
+  |                                                                            
+  |=============================================================         |  88%
+  |                                                                            
+  |==============================================================        |  88%
+  |                                                                            
+  |==============================================================        |  89%
+  |                                                                            
+  |===============================================================       |  89%
+  |                                                                            
+  |===============================================================       |  90%
+  |                                                                            
+  |===============================================================       |  91%
+  |                                                                            
+  |================================================================      |  91%
+  |                                                                            
+  |================================================================      |  92%
+  |                                                                            
+  |=================================================================     |  92%
+  |                                                                            
+  |=================================================================     |  93%
+  |                                                                            
+  |==================================================================    |  94%
+  |                                                                            
+  |==================================================================    |  95%
+  |                                                                            
+  |===================================================================   |  95%
+  |                                                                            
+  |===================================================================   |  96%
+  |                                                                            
+  |====================================================================  |  97%
+  |                                                                            
+  |====================================================================  |  98%
+  |                                                                            
+  |===================================================================== |  98%
+  |                                                                            
+  |===================================================================== |  99%
+  |                                                                            
+  |======================================================================|  99%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_pop_2024)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 6 features and 5 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -124.5662 ymin: 41.99302 xmax: -119.8966 ymax: 46.29083
+Geodetic CRS:  NAD83
+  GEOID                     NAME   variable estimate moe
+1 41015     Curry County, Oregon B01003_001    23381  NA
+2 41007   Clatsop County, Oregon B01003_001    41363  NA
+3 41035   Klamath County, Oregon B01003_001    70247  NA
+4 41033 Josephine County, Oregon B01003_001    88179  NA
+5 41065     Wasco County, Oregon B01003_001    26552  NA
+6 41017 Deschutes County, Oregon B01003_001   206334  NA
+                        geometry
+1 MULTIPOLYGON (((-124.3239 4...
+2 MULTIPOLYGON (((-123.6647 4...
+3 MULTIPOLYGON (((-122.29 42....
+4 MULTIPOLYGON (((-124.042 42...
+5 MULTIPOLYGON (((-121.8053 4...
+6 MULTIPOLYGON (((-122.0019 4...</code></pre>
+</div>
+</div>
+<p>Notice that our view of the data frame includes a bunch of extra information related to the geometric/shapefile data. We will not use the shapefiles now, but they will be useful in a later mapping session. We’re going to do a bit of additional work before saving the dataset to use later.</p>
+</section>
+<section id="step-2-calculate-population-growth" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="step-2-calculate-population-growth"><span class="header-section-number">2.3.2</span> Step 2: Calculate Population Growth</h3>
+<p>Let’s combine the two datasets and calculate the percentage change in population:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare each dataset: keep only GEOID, NAME, and estimate; rename estimate</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>or_pop_2019 <span class="ot">&lt;-</span> or_pop_2019 <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, NAME, estimate) <span class="sc">|&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">pop_2019 =</span> estimate)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>or_pop_2024 <span class="ot">&lt;-</span> or_pop_2024 <span class="sc">|&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, NAME, estimate) <span class="sc">|&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">pop_2024 =</span> estimate)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Join and calculate percent change</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>or_pop_change <span class="ot">&lt;-</span> or_pop_2024 <span class="sc">|&gt;</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(or_pop_2019, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"GEOID"</span>, <span class="st">"NAME"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">pop_change =</span> pop_2024 <span class="sc">-</span> pop_2019,</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_change =</span> (pop_change <span class="sc">/</span> pop_2019) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Clean up county names (remove ", Oregon" suffix)</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_remove</span>(NAME, <span class="st">" County, Oregon"</span>))</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_pop_change)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 6 features and 7 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -124.5662 ymin: 41.99302 xmax: -119.8966 ymax: 46.29083
+Geodetic CRS:  NAD83
+  GEOID                     NAME pop_2024 pop_2019
+1 41015     Curry County, Oregon    23381    22650
+2 41007   Clatsop County, Oregon    41363    39102
+3 41035   Klamath County, Oregon    70247    66921
+4 41033 Josephine County, Oregon    88179    86251
+5 41065     Wasco County, Oregon    26552    26130
+6 41017 Deschutes County, Oregon   206334   186251
+                        geometry pop_change pct_change    county
+1 MULTIPOLYGON (((-124.3239 4...        731   3.227373     Curry
+2 MULTIPOLYGON (((-123.6647 4...       2261   5.782313   Clatsop
+3 MULTIPOLYGON (((-122.29 42....       3326   4.970039   Klamath
+4 MULTIPOLYGON (((-124.042 42...       1928   2.235336 Josephine
+5 MULTIPOLYGON (((-121.8053 4...        422   1.615002     Wasco
+6 MULTIPOLYGON (((-122.0019 4...      20083  10.782761 Deschutes</code></pre>
+</div>
+</div>
+<p>Now that we have a combined dataset, let’s save it to our Data folder using the <code>.RDS</code> format so we can use the shapefile data for mapping later. After saving the data, we’ll remove the geometry data from the object we are going to work with in this session.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(or_pop_change, <span class="st">"Data/or_geo_data.RDS"</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert the data to a normal tibble/data frame and remove the geometry field</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>or_pop_change <span class="ot">&lt;-</span> or_pop_change <span class="sc">|&gt;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>geometry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-3-visualize-population-growth" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="step-3-visualize-population-growth"><span class="header-section-number">2.3.3</span> Step 3: Visualize Population Growth</h3>
+<p>Let’s create a bar chart showing population growth by county, sorted from highest to lowest growth:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>or_pop_change <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pct_change, <span class="at">y =</span> <span class="fu">reorder</span>(county, pct_change))) <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="fu">aes</span>(<span class="at">fill =</span> pct_change <span class="sc">&gt;</span> <span class="dv">0</span>), <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"TRUE"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>, <span class="st">"FALSE"</span> <span class="ot">=</span> <span class="st">"red3"</span>)) <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Population Change (%)"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="cn">NULL</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: U.S. Census Bureau, American Community Survey 5-Year Estimates"</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="fig-pop-growth" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center" alt="Horizontal bar chart showing population percent change for Oregon counties, sorted in descending order.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pop-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="08_Day-2_Accessing-Data-via-API_files/figure-html/fig-pop-growth-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" alt="Horizontal bar chart showing population percent change for Oregon counties, sorted in descending order." width="768">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pop-growth-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Percentage Population Change in Oregon Counties (2019-2024)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Exercise 1: Explore a Different Variable
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Using <code>load_variables()</code>, find the variable code for <strong>median household income</strong> (hint: look in table B19013). Then use <code>get_acs()</code> to retrieve median household income for Oregon counties from the 2024 5-year ACS. Create a horizontal bar chart showing the top 20 counties with the highest median income.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Search for the variable</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>vars <span class="ot">&lt;-</span> <span class="fu">load_variables</span>(<span class="dv">2024</span>, <span class="st">"acs5"</span>, <span class="at">cache =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter for table B19013 to find median household income</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co"># vars |&gt; filter(str_detect(name, "B19013"))</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Retrieve the data</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>or_income <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"county"</span>,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">"B19013_001"</span>,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">"OR"</span>,</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2024</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_remove</span>(NAME, <span class="st">" County, Oregon"</span>))</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Create a bar chart</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>or_income <span class="sc">|&gt;</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="at">n =</span> <span class="dv">20</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> estimate, <span class="at">y =</span> <span class="fu">reorder</span>(county, estimate))) <span class="sc">+</span> </span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Median Household Income in Oregon Counties, 2024"</span>,</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> <span class="st">"Median Income ($)"</span>,</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="cn">NULL</span>,</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: U.S. Census Bureau, American Community Survey 5-Year Estimates"</span></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="other-available-datasets" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="other-available-datasets"><span class="header-section-number">2.4</span> Other Available Datasets</h2>
+<p>While we focused on the ACS today, tidycensus provides access to several other Census Bureau datasets:</p>
+<ul>
+<li><strong>Decennial Census</strong> via <code>get_decennial()</code> — full-count data from the 2000, 2010, and 2020 Census</li>
+<li><strong>Population Estimates</strong> via <code>get_estimates()</code> — annual population estimates, including components of change (births, deaths, migration)</li>
+<li><strong>Migration Flows</strong> via <code>get_flows()</code> — county-to-county and metro-to-metro migration data from the ACS</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Exercise 2: Try Another Dataset
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Use <code>get_decennial()</code> to retrieve total population by county in Oregon from the 2020 Decennial Census. The variable for total population in the DHC summary file is <strong>P1_001N</strong>. How do the Decennial counts compare to the ACS estimates you retrieved earlier?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>or_decennial_2020 <span class="ot">&lt;-</span> <span class="fu">get_decennial</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">"county"</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">"______"</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">"OR"</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2020</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">sumfile =</span> <span class="st">"dhc"</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with the ACS data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="using-blsapi" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Using <code>blsAPI</code></h1>
+<section id="overview-1" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="overview-1"><span class="header-section-number">3.1</span> Overview</h2>
+<p>The situation for BLS wrappers in R is a little more ambiguous, partly because the BLS API is less well-maintained than Census (the most recent update listed on their <a href="https://www.bls.gov/bls/api_features.htm">website</a> is 2020). While <code>tidycensus</code> has become widely used, there are at least three different packages for accessing BLS data with various pros and cons.</p>
+<ol type="1">
+<li><a href="https://github.com/mikeasilva/blsAPI"><code>blsAPI</code></a> — <em>Pros:</em> straightforward implementation, used in official BLS API documentation. <em>Cons:</em> mostly requires knowing specific series IDs for the data you want, as well as some knowledge of how to parse the returned data; most recent version is not on official CRAN repository.</li>
+<li><a href="https://github.com/keberwein/blscrapeR"><code>blscrapeR</code></a> — <em>Pros:</em> a bit more user-friendly, compatible with the <code>tidyverse</code> style/format. <em>Cons:</em> unmaintained until just recently, mostly requires knowing specific series IDs for the data you want.</li>
+<li><a href="https://schmidtdetr.github.io/BLSloadR/index.html"><code>BLSloadR</code></a> — <em>Pros:</em> avoids the rate limits set by the BLS API, includes more intuitive functions, and is being developed by LMI shops. <em>Cons:</em> largely downloads data in bulk, is still in the early stages of development.</li>
+</ol>
+<p>Recognizing these limitations, we at least wanted to examine the <code>blsAPI</code> package in part because it includes a more ergonomic function for retrieving <strong>Local Area Unemployment Statistics (LAUS)</strong> data, <code>laus_get_data()</code>. It also contains a similar function for retrieving QCEW data.</p>
+<p>While the core <code>blsAPI()</code> function requires that you know the series ID of the data you want to retrieve, <code>laus_get_data</code> doesn’t; you just provide location names, a measure, and a year range for the data you want.</p>
+<p>Visit the package repository for full documentation: <a href="https://github.com/mikeasilva/blsAPI" class="uri">https://github.com/mikeasilva/blsAPI</a></p>
+<section id="bls-api-versions-and-limits" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="bls-api-versions-and-limits"><span class="header-section-number">3.1.1</span> BLS API Versions and Limits</h3>
+<p>Before jumping in, it’s also worth noting that the BLS API has two versions with different capabilities and different limits on how many API queries you make at one time, and how many data series you can return with a single query.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 32%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Version 2.0 (Registered)</th>
+<th>Version 1.0 (Unregistered)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Daily query limit</td>
+<td>500</td>
+<td>25</td>
+</tr>
+<tr class="even">
+<td>Series per query</td>
+<td>50</td>
+<td>25</td>
+</tr>
+<tr class="odd">
+<td>Years per query</td>
+<td>20</td>
+<td>10</td>
+</tr>
+<tr class="even">
+<td>Net/Percent changes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Annual averages</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>We will use <strong>Version 2.0</strong>, which requires a registration for a free API key. You can register for one at <a href="https://data.bls.gov/registrationEngine/" class="uri">https://data.bls.gov/registrationEngine/</a>.</p>
+</section>
+</section>
+<section id="getting-started-1" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="getting-started-1"><span class="header-section-number">3.2</span> Getting Started</h2>
+<p>Because a compatible version of the package is only available via GitHub, we’ll have to take a slightly different approach to installing it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First ensure that devtools package is installed:</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"devtools"</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Now use the install_github function from devtools to install the blsAPI package.</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># The package::function() syntax allows you to use a function without loading the entire package.</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"mikeasilva/blsAPI"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="setting-up-your-bls-api-key" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="setting-up-your-bls-api-key"><span class="header-section-number">3.2.1</span> Setting Up Your BLS API Key</h3>
+<p>Just like the Census API, you should store your BLS API key in your <code>.Renviron</code> file rather than hardcoding it in scripts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Open your .Renviron file for editing</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The usethis package should be installed automatically when you install devtools</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">edit_r_environ</span>()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Add this line to the file, then save:</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co"># BLS_KEY=your_key_here</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Reload R environment </span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="fu">readRenviron</span>(<span class="st">"~/.Renviron"</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Check that it is installed</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.getenv</span>(<span class="st">"BLS_KEY"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can then retrieve your key in any script with <code>Sys.getenv("BLS_KEY")</code>. We will pass this key to <code>blsAPI</code> functions when making Version 2.0 requests.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(blsAPI)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="retrieving-laus-data-for-oregon-counties" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="retrieving-laus-data-for-oregon-counties"><span class="header-section-number">3.3</span> Retrieving LAUS Data for Oregon Counties</h2>
+<p>The <strong>Local Area Unemployment Statistics (LAUS)</strong> program produces monthly employment and unemployment estimates for states, counties, metros, and other geographies. Let’s use <code>laus_get_data()</code> to retrieve county-level data for Oregon.</p>
+<section id="step-1-identify-oregon-county-names" class="level3" data-number="3.3.1">
+<h3 data-number="3.3.1" class="anchored" data-anchor-id="step-1-identify-oregon-county-names"><span class="header-section-number">3.3.1</span> Step 1: Identify Oregon County Names</h3>
+<p>The <code>laus_get_data()</code> function takes location names as its first argument. These names need to match what the BLS uses in its area codes dataset. For counties, the format is <code>"County Name County, OR"</code>. You can explore the available area names using a dataset built into the <code>blsAPI</code> package:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># View a list of all available LAUS area names and their associated codes</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(LAUS_AreaCodes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s define the Oregon counties we will work with. Oregon has 36 counties — we will use a selection here to keep API requests manageable, since each call counts against the daily query limit:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter the LAUS area name to just those that contain "County, OR" and store as a vector object</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>or_counties <span class="ot">&lt;-</span> LAUS_AreaCodes <span class="sc">|&gt;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_text) <span class="sc">|&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(area_text, <span class="st">"County, OR"</span>))</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>or_counties <span class="ot">&lt;-</span> or_counties<span class="sc">$</span>area_text</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+API Rate Limits
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Each <code>laus_get_data()</code> call sends requests to the BLS API, which has daily query limits. With Version 2.0 (registered), you get 500 queries per day and up to 50 series per query. For a large number of counties, the function may need to make multiple API calls behind the scenes. If you are working with many counties and multiple measures, be mindful of your daily limit.</p>
+</div>
+</div>
+</section>
+<section id="step-2-download-unemployment-rate-and-labor-force-data" class="level3" data-number="3.3.2">
+<h3 data-number="3.3.2" class="anchored" data-anchor-id="step-2-download-unemployment-rate-and-labor-force-data"><span class="header-section-number">3.3.2</span> Step 2: Download Unemployment Rate and Labor Force Data</h3>
+<p>The <code>laus_get_data()</code> function takes four arguments: a vector of location names, the measure you want, a start year, and an end year. You need to make a <strong>separate call for each measure</strong>, since the function returns data for one measure at a time.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Retrieve unemployment rate data for 2019-2024</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>or_ur <span class="ot">&lt;-</span> <span class="fu">laus_get_data</span>(or_counties, <span class="st">"unemployment rate"</span>, <span class="dv">2019</span>, <span class="dv">2024</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_ur)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Notice the structure: the function returns a data frame with columns for <code>year</code>, <code>period</code>, <code>periodName</code>, the measure value (named based on your request — here, <code>Unemployment_Rate</code>), and <code>Location</code>.</p>
+<p>Now let’s pull labor force data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Retrieve labor force data for the same counties and years</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>or_lf <span class="ot">&lt;-</span> <span class="fu">laus_get_data</span>(or_counties, <span class="st">"labor force"</span>, <span class="dv">2019</span>, <span class="dv">2024</span>)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_lf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-3-calculate-average-annual-values" class="level3" data-number="3.3.3">
+<h3 data-number="3.3.3" class="anchored" data-anchor-id="step-3-calculate-average-annual-values"><span class="header-section-number">3.3.3</span> Step 3: Calculate Average Annual Values</h3>
+<p>Let’s create a summary table with average annual unemployment rate and labor force for each county. First, we need to clean up and reshape the data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean unemployment rate data: ensure numeric types and create a date column</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>or_ur_clean <span class="ot">&lt;-</span> or_ur <span class="sc">|&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">ur =</span> <span class="fu">as.numeric</span>(Unemployment_Rate),</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year),</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(<span class="fu">paste0</span>(year, <span class="st">"-"</span>,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_pad</span>(<span class="fu">str_remove</span>(period, <span class="st">"M"</span>), <span class="dv">2</span>, <span class="at">pad =</span> <span class="st">"0"</span>), <span class="st">"-01"</span>))</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate average annual unemployment rate by county</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>or_ur_annual <span class="ot">&lt;-</span> or_ur_clean <span class="sc">|&gt;</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(period <span class="sc">!=</span> <span class="st">"M13"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, Location) <span class="sc">|&gt;</span></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_ur =</span> <span class="fu">round</span>(<span class="fu">mean</span>(ur, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean and summarize labor force data the same way</span></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>or_lf_clean <span class="ot">&lt;-</span> or_lf <span class="sc">|&gt;</span></span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">lf =</span> <span class="fu">as.numeric</span>(Labor_Force),</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year)</span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>or_lf_annual <span class="ot">&lt;-</span> or_lf_clean <span class="sc">|&gt;</span></span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(period <span class="sc">!=</span> <span class="st">"M13"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, Location) <span class="sc">|&gt;</span></span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_lf =</span> <span class="fu">round</span>(<span class="fu">mean</span>(lf, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">0</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine into one summary table</span></span>
+<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a>or_laus_annual <span class="ot">&lt;-</span> or_ur_annual <span class="sc">|&gt;</span></span>
+<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(or_lf_annual, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"Location"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb28-31"><a href="#cb28-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_remove</span>(Location, <span class="st">", OR$"</span>))</span>
+<span id="cb28-32"><a href="#cb28-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-33"><a href="#cb28-33" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(or_laus_annual, <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Exercise 3: Explore the LAUS Data
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Look at the <code>or_laus_annual</code> data frame. Which county in the dataset had the highest average unemployment rate in 2024? Which had the lowest? Use <code>filter()</code> and <code>arrange()</code> to find out.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Highest unemployment rate in 2024</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>or_laus_annual <span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2024</span>) <span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(avg_ur))</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Lowest unemployment rate in 2024</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>or_laus_annual <span class="sc">|&gt;</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2024</span>) <span class="sc">|&gt;</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(______)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="step-4-create-a-line-chart-for-one-county" class="level3" data-number="3.3.4">
+<h3 data-number="3.3.4" class="anchored" data-anchor-id="step-4-create-a-line-chart-for-one-county"><span class="header-section-number">3.3.4</span> Step 4: Create a Line Chart for One County</h3>
+<p>Let’s visualize the monthly unemployment rate trend for a single county using the cleaned monthly data:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>or_ur_clean <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    Location <span class="sc">==</span> <span class="st">"Multnomah County, OR"</span>,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    period <span class="sc">!=</span> <span class="st">"M13"</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> ur)) <span class="sc">+</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> \(x) <span class="fu">paste0</span>(x, <span class="st">"%"</span>)) <span class="sc">+</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Unemployment Rate"</span>,</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: Bureau of Labor Statistics, Local Area Unemployment Statistics"</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-5-faceted-line-chart-for-multiple-counties" class="level3" data-number="3.3.5">
+<h3 data-number="3.3.5" class="anchored" data-anchor-id="step-5-faceted-line-chart-for-multiple-counties"><span class="header-section-number">3.3.5</span> Step 5: Faceted Line Chart for Multiple Counties</h3>
+<p>To compare several counties at once, we can use <code>facet_wrap()</code> in ggplot2 to create a small multiples chart:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 6 counties for comparison</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>selected_counties <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Multnomah County, OR"</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Lane County, OR"</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Deschutes County, OR"</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Jackson County, OR"</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Marion County, OR"</span>,</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Coos County, OR"</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>or_ur_clean <span class="sc">|&gt;</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    Location <span class="sc">%in%</span> selected_counties,</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>    period <span class="sc">!=</span> <span class="st">"M13"</span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_remove</span>(Location, <span class="st">", OR$"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> ur)) <span class="sc">+</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> \(x) <span class="fu">paste0</span>(x, <span class="st">"%"</span>)) <span class="sc">+</span></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> county, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Unemployment Rate"</span>,</span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: Bureau of Labor Statistics, Local Area Unemployment Statistics"</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">1</span>, <span class="st">"lines"</span>)</span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The faceted chart makes it easy to compare trends across counties while giving each one its own panel for clarity. Notice how all six counties show the dramatic spike during 2020 but with different magnitudes and recovery timelines.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Exercise 4: Your Own Faceted Chart
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Create a faceted line chart showing the <strong>labor force</strong> (not unemployment rate) for a different set of 4–6 Oregon counties of your choice. You will need to work with the <code>or_lf</code> data frame instead of <code>or_ur_clean</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Clean the labor force data (similar to what we did for unemployment rate)</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>my_counties <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Pick 4-6 counties from the or_counties vector</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>or_lf_monthly <span class="ot">&lt;-</span> or_lf <span class="sc">|&gt;</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">lf =</span> <span class="fu">as.numeric</span>(______),</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year),</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(<span class="fu">paste0</span>(year, <span class="st">"-"</span>,</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_pad</span>(<span class="fu">str_remove</span>(period, <span class="st">"M"</span>), <span class="dv">2</span>, <span class="at">pad =</span> <span class="st">"0"</span>), <span class="st">"-01"</span>))</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Filter and plot</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>or_lf_monthly <span class="sc">|&gt;</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>    Location <span class="sc">%in%</span> my_counties,</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    period <span class="sc">!=</span> <span class="st">"M13"</span></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_remove</span>(Location, <span class="st">", OR$"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> lf)) <span class="sc">+</span></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> county, <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Labor Force"</span>,</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Source: Bureau of Labor Statistics, Local Area Unemployment Statistics"</span></span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Bonus:</strong> Notice the <code>scales = "free_y"</code> argument in <code>facet_wrap()</code>. What does it do? Try removing it and see how the chart changes. When would you want fixed vs.&nbsp;free scales?</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Exercise 5: Combine Census and BLS Data
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This is a more advanced exercise that brings together both packages. Using the county-level population data you retrieved from tidycensus and the LAUS labor force data from blsAPI, calculate a <strong>labor force participation rate proxy</strong> for each Oregon county (average annual labor force divided by total population). Create a bar chart showing the results.</p>
+<p>Hint: You will need to join the datasets on county name. Think about which year of Census data to pair with which year of LAUS data, and how to make the county name formats match between the two sources.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your code here</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-the-core-blsapi-function" class="level3" data-number="3.3.6">
+<h3 data-number="3.3.6" class="anchored" data-anchor-id="using-the-core-blsapi-function"><span class="header-section-number">3.3.6</span> Using the Core blsAPI() Function</h3>
+<p>While <code>laus_get_data()</code> is convenient for LAUS data, the core <code>blsAPI()</code> function gives you access to <em>any</em> BLS series if you know the series ID. This is useful for programs that do not have a dedicated wrapper function.</p>
+<p>Here is a quick example of requesting data with a known series ID:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Request CPI-U (Consumer Price Index) data using API Version 2.0</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>payload <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"seriesid"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"CUUR0000SA0"</span>),</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"startyear"</span> <span class="ot">=</span> <span class="dv">2020</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"endyear"</span> <span class="ot">=</span> <span class="dv">2024</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"registrationkey"</span> <span class="ot">=</span> <span class="fu">Sys.getenv</span>(<span class="st">"BLS_KEY"</span>)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>response <span class="ot">&lt;-</span> <span class="fu">blsAPI</span>(payload, <span class="at">api_version =</span> <span class="dv">2</span>, <span class="at">return_data_frame =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(response)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can find series IDs for any BLS program using the tools at <a href="https://www.bls.gov/data/" class="uri">https://www.bls.gov/data/</a>.</p>
+</section>
+</section>
+<section id="other-available-bls-datasets" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="other-available-bls-datasets"><span class="header-section-number">3.4</span> Other Available BLS Datasets</h2>
+<p>Beyond LAUS, the BLS produces many other datasets you can access through the API:</p>
+<ul>
+<li><strong>CES</strong> (Current Employment Statistics) — employer-based estimates of employment, wages, and hours at state and metro levels</li>
+<li><strong>OEWS</strong> (Occupational Employment and Wage Statistics) — employment and wage estimates by occupation</li>
+<li><strong>JOLTS</strong> (Job Openings and Labor Turnover Survey) — data on job openings, hires, and separations</li>
+<li><strong>CPS</strong> (Current Population Survey) — national household survey data with demographic detail</li>
+<li><strong>QCEW</strong> (Quarterly Census of Employment and Wages) — comprehensive employer-reported data by industry and area. The blsAPI package includes a dedicated <code>blsQCEW()</code> function for this dataset.</li>
+</ul>
+<p>Each of these can be accessed through <code>blsAPI()</code> using the appropriate series IDs, or through specialized wrapper functions where they exist.</p>
+</section>
+</section>
+<section id="wrapping-up" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Wrapping Up</h1>
+<p>In this session we covered how to use R packages to access two major federal data sources directly from your scripts. The key takeaways are:</p>
+<ul>
+<li><strong>APIs</strong> let you retrieve data programmatically, making your workflow reproducible and scriptable. <strong>Wrapper packages</strong> like <code>tidycensus</code> and <code>blsAPI</code> hide the complexity of raw API calls and return ready-to-use data.</li>
+<li><strong>tidycensus</strong> gives you access to ACS, Decennial Census, Population Estimates, and more, with built-in support for spatial geometries.</li>
+<li><strong>blsAPI</strong> gives you access to LAUS and other BLS programs through the BLS API. The <code>laus_get_data()</code> convenience function lets you request LAUS data by location name and measure without constructing series IDs manually.</li>
+</ul>
+<p>Both packages return data that integrates directly with the tidyverse and ggplot2 workflows you already know.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+          // target, if specified
+          link.setAttribute("target", "_blank");
+          if (link.getAttribute("rel") === null) {
+            link.setAttribute("rel", "noopener");
+          }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<script src="08_Day-2_Accessing-Data-via-API_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
