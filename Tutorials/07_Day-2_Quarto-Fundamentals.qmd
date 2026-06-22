@@ -5,6 +5,7 @@ date: 2026-06-03T14:30
 date-format: "dddd, MMMM D, YYYY; h:mmA"
 format:
   html:
+    embed-resources: true
     toc: true
     toc-depth: 2
     toc-location: left
@@ -15,17 +16,16 @@ format:
     smooth-scroll: true
     link-external-newwindow: true
 ---
+
 # What is Quarto and Why Use It?
+
+You may have noticed that all of the course's tutorials are provided as HTML files
 
 ## What is Quarto?
 
 Quarto is a **code-based publishing system** that allows you to integrate executable code and plain text into a single document. Think of it as a way to combine your analysis, visualizations, and narrative all in one place.
 
-If you have used **R Markdown** before, Quarto will feel familiar. It is the next generation of R Markdown, with some syntax differences you may notice when comparing with the R Markdown files used for Day 1 walkthroughs. Key differences include:
-
--   Chunk options use the `#|` (hashpipe) syntax instead of being placed inside `{r, option=value}`
--   YAML configuration is more unified across output formats
--   Quarto is not limited to R --- it also supports **Python**, **Julia**, and **Observable** (a JavaScript-based visualization environment)
+If you have used **R Markdown** before, Quarto will feel familiar. It is the next generation of R Markdown, with some syntax differences you may notice when comparing with the R Markdown files used for Day 1 walkthroughs. Most importantly, Quarto is not limited to R --- it also supports **Python**, **Julia**, and **Observable** (a JavaScript-based visualization environment)
 
 Quarto can output documents in many formats, including:
 
@@ -56,6 +56,7 @@ RStudio will generate a template `.qmd` file with some example content. Click th
 Create a new Quarto document now. Render it to see the default output before we start making changes.
 :::
 
+You can also view the Quarto document that produced this tutorial by opening `07_Day-2_Quarto-Fundamentals.qmd`.
 
 # Basic Writing/Editing
 
@@ -76,17 +77,21 @@ Use `#` symbols to create headings. More `#` symbols mean smaller headings:
 
 ### Bold and Italics
 
+Text can be formatted using the following syntax:
+
 ``` markdown
-**This text is bold**
-*This text is italic*
+*This text is italic*/_This text is italic_
+**This text is bold**/__This text is bold__
 ***This text is bold and italic***
 ```
 
-**This text is bold**, *this text is italic*, and ***this text is bold and italic***.
+*This text is italic*
+**This text is bold**
+***This text is bold and italic***.
 
 ### Non-Executable Code
 
-Use backticks for inline code: `` `mean(x)` `` renders as `mean(x)`.
+You can also easily format text in monospace font to indicate code (without execution): `` `mean(x)` `` renders as `mean(x)`.
 
 Use triple backticks for code blocks (without execution):
 
@@ -98,21 +103,21 @@ summary(data)
 
 ### Bullets and Lists
 
-Unordered lists use `-`, `+`, or `*`:
+Unordered/bulleted lists use `-`, `+`, or `*` with a space afterwards:
 
 ``` markdown
 - First item
-- Second item
++ Second item
   - Sub-item
   - Another sub-item
-- Third item
+* Third item
 ```
 
--   First item
--   Second item
-    -   Sub-item
-    -   Another sub-item
--   Third item
+- First item
++ Second item
+  - Sub-item
+  - Another sub-item
+* Third item
 
 Ordered lists use numbers:
 
@@ -126,21 +131,9 @@ Ordered lists use numbers:
 2.  Second step
 3.  Third step
 
-### Footnotes
-
-You can add footnotes using the `[^1]` syntax:
-
-``` markdown
-This claim needs a citation[^1].
-
-[^1]: Here is the footnote text.
-```
-
-We will cover footnotes in more detail in @sec-footnotes.
-
 ### Tables
 
-Create tables using pipes and dashes:
+You can manually create tables using pipes and dashes:
 
 ``` markdown
 | Column A | Column B | Column C |
@@ -156,18 +149,20 @@ Which renders as:
 | Row 1    | Data     | Data     |
 | Row 2    | Data     | Data     |
 
+Typing all this out can be painful --- the following website allows you to create a table visually, then copy and paste the associated markdown: [https://www.tablesgenerator.com/markdown_tables](https://www.tablesgenerator.com/markdown_tables).
+
 ::: {.callout-important}
 ## Why Learn Markdown?
-Markdown is worth learning beyond Quarto. It is the standard formatting syntax used across many platforms: GitHub, Jupyter notebooks, Slack, and many others. It is also the primary way people now communicate with AI tools like ChatGPT and Claude, especially in the context of agentic coding where developers use markdown documents to control agent behavior. Knowing Markdown will make you more effective across many digital workflows.
+Markdown is worth learning beyond Quarto. It is the standard formatting syntax used across many platforms: GitHub, Jupyter notebooks, Slack, Reddit, and many others. It is also the primary way people now communicate with AI tools like ChatGPT and Claude, especially in the context of agentic coding where developers use markdown documents to control agent behavior. Knowing Markdown will make you more effective across many digital workflows.
 :::
 
 ## Source vs. Visual Editor
 
 RStudio offers two editing modes for Quarto documents:
 
-**Source Editor** shows the raw Markdown syntax. You will see the `#` symbols, `**bold**` markers, and all other formatting codes directly. This is useful when you want precise control over formatting, when you are writing code-heavy documents, or when troubleshooting rendering issues.
+**Source Editor** shows the raw Markdown syntax. You will see the `#` symbols, `**bold**` markers, and all other formatting directly. This is useful when you want precise control over formatting, when you are writing code-heavy documents, or when troubleshooting rendering issues.
 
-**Visual Editor** provides a word-processor-like experience similar to Microsoft Word. Formatting is displayed as it will appear, and you can use toolbar buttons for common formatting. This is useful when writing narrative-heavy sections, working with tables, or when you are new to Markdown.
+**Visual Editor** provides a WYSIWG ("what you see is what you get") experience similar to Microsoft Word. Formatting is displayed as it will appear in the rendered document, and you can use toolbar buttons for common formatting. This is useful when writing narrative-heavy sections, working with tables, or when you are new to Markdown.
 
 To switch between them, use the **Source** and **Visual** buttons at the top-left of the editor pane.
 
@@ -193,13 +188,7 @@ To **add a new code chunk**, you can:
 
 -   Use the keyboard shortcut `Ctrl+Alt+I` (Windows) or `Cmd+Option+I` (Mac)
 -   Click the green **+C** button in the editor toolbar
--   Manually type the backtick fencing
-
-Try making a code chunk below:
-
-
-
-Good job! For now, you should place all of your *R code* inside of code chunks.
+-   Manually type the triple backtick fencing with `r` in curly-braces (if you are adding a code chunk using Python you would use `{python}` instead)
 
 ### Executing Code Chunks
 
@@ -233,9 +222,9 @@ For example, writing:
 The dataset contains `{r} nrow(mtcars)` observations and `{r} ncol(mtcars)` variables.
 ```
 
-Produces: The dataset contains `{r} nrow(mtcars)` observations and `{r} ncol(mtcars)` variables.
+Produces: "The dataset contains `{r} nrow(mtcars)` observations and `{r} ncol(mtcars)` variables." (`mtcars` is an example dataset built into base R).
 
-This is powerful for creating dynamic reports --- if the data changes, the numbers in your text update automatically.
+This is a powerful feature for creating dynamic reports --- by using inline code execution if the data changes, the numbers in your text update automatically.
 
 ::: {.callout-warning}
 ## Reminder: Execution Order
@@ -252,9 +241,7 @@ Inline code follows the same execution order rules as code chunks. Any object yo
 
 ### What is YAML?
 
-The block at the very top of your Quarto document (between the `---` lines) is called the **YAML header**. YAML stands for "Yet Another Markup Language," and it uses a simple `key: value` pair structure to define settings.
-
-The YAML header is where you set **document properties** (title, author, date) as well as **rendering options** (output format, themes, table of contents, etc.).
+The block at the very top of your Quarto document (between the `---` lines) is called the **YAML header**. YAML stands for "Yet Another Markup Language," and it uses a simple `key: value` pair structure to define settings for different parameters. The YAML header is where you set **document properties** (title, author, date) as well as **rendering options** (output format, themes, table of contents, etc.).
 
 Here is an example YAML header for an HTML document:
 
@@ -268,15 +255,13 @@ format:
     toc: true
     number-sections: true
     theme: cosmo
-    code-fold: true
 ---
 ```
+In addition to setting the title, author, and date of the document, this YAML header ensures that, when the document is rendered in HTML, a table of contents is included, all header sections are numbered, and everything is visually styled according to the [Bootswatch cosmo theme](https://bootswatch.com/cosmo/).
 
 ### Specifying Output Formats
 
-You can set one or more output formats in the YAML header. The example above demonstrates some of the options available when rendering the document in HTML.
-
-To add a **PDF** format option alongside HTML:
+You can set one or more output formats in the YAML header. To add a **PDF** format option alongside HTML:
 
 ``` yaml
 format:
@@ -292,16 +277,16 @@ When multiple formats are specified, you can choose which one to render using th
 
 ::: {.callout-note}
 ## PDF Output Requirements
-Rendering to PDF requires a LaTeX installation. If you do not have one, Quarto can install **TinyTeX** for you by running `quarto install tinytex` in your terminal.
+Rendering to PDF requires a [LaTeX](https://www.latex-project.org/) installation. If you do not have one, Quarto can install **TinyTeX** for you by running `quarto install tinytex` in your terminal.
 :::
 
 ## Code Chunk Options
 
-Code chunk options are set using the `#|` (hashpipe) syntax at the top of a chunk. These control how each chunk behaves during rendering. Below are some of the most common.
+In Quarto code chunk options are set using the `#|` (hashpipe) syntax at the top of a chunk. These control how each chunk behaves during rendering. Below are some of the most common.
 
 ### Adding a Label
 
-Labels help with navigation and cross-referencing. Prefix with `fig-` or `tbl-` to enable automatic numbering:
+Labels help with navigation and cross-referencing. You can cross-reference a code chunk by using the `@label-name` syntaxt. If you prefix the label with `fig-` or `tbl-` Quarto will enable automatic numbering of figures and plots when cross-referencing (e.g., Table 1, Table 2, etc.):
 
 ```{{r}}
 #| label: fig-example-plot
@@ -309,7 +294,18 @@ Labels help with navigation and cross-referencing. Prefix with `fig-` or `tbl-` 
 
 ### Controlling Code Display with `echo`
 
-The `echo` option controls whether the **source code** appears in the rendered document:
+The `echo` option controls whether the **source code** appears in the rendered document.
+
+```{{r}}
+#| label: echo-demo
+#| echo: false
+
+# This code runs, but will not appear in the rendered document
+hidden_result <- 42 * 2
+hidden_result
+```
+
+The above code chunk is included in an executable chunk below.
 
 ```{r}
 #| label: echo-demo
@@ -334,20 +330,33 @@ The `eval` option controls whether the code **runs** at all:
 this_would_cause_an_error <- nonexistent_function()
 ```
 
-The chunk above is displayed but was never executed, so no error occurs.
+The chunk above is displayed but was never executed, so no error occurs (which would ordinarily prevent rendering).
 
 ### Controlling Output Display with `include`
 
 The `include` option controls whether **anything** from the chunk (code or results) appears in the rendered document. When `include: false`, the code still runs, but nothing is shown:
 
-```{r}
+```{{r}}
 #| label: include-demo
 #| include: false
 
 # This runs silently --- useful for setup code
 library(ggplot2)
 sample_data <- mtcars
+sample_data
 ```
+This code is included below, but no code or output are displayed.
+
+```{r}
+#| label: include-demo
+#| include: false
+
+# This runs silently --- useful for setup code
+library(tidyverse)
+sample_data <- mtcars
+```
+
+We can confirm that the code was run by using the inline snippet, `` `{r} nrow(sample_data)` ``: `{r} nrow(sample_data)`.
 
 ### Setting Global Options in the YAML Header
 
@@ -371,19 +380,28 @@ Let's create some example tables and figures using the built-in `mtcars` dataset
 
 ### Table Display
 
-By default, Quarto displays data frames based on the `df-print` option set in the YAML header. This document uses `df-print: kable`, which produces clean, formatted tables:
+By default, Quarto displays data frames based on the `df-print` option set in the YAML header. This document uses the default `df-print: kable`, which produces clean, formatted tables:
 
 ```{r}
 #| label: tbl-mtcars-summary
 #| tbl-cap: "Summary Statistics of MPG by Number of Cylinders"
 
-# Create a summary table
-mtcars_summary <- aggregate(
-  cbind(mpg, hp, wt) ~ cyl,
-  data = mtcars,
-  FUN = function(x) round(mean(x), 1)
-)
-names(mtcars_summary) <- c("Cylinders", "Avg MPG", "Avg HP", "Avg Weight (1000 lbs)")
+# Create a summary table using base R
+mtcars_summary <- mtcars |> 
+  group_by(cyl) |> 
+  summarize(
+    across(
+      c(mpg, hp, wt), 
+      \(x) round(mean(x), 1)
+    )
+  ) |> 
+  rename(
+    "Cylinders" = cyl,
+    "Avg MPG" = mpg,
+    "Avg HP" = hp,
+    "Avg Weight (1000 lbs)" = wt
+  )
+
 mtcars_summary
 ```
 
@@ -422,7 +440,7 @@ As shown in @fig-mpg-scatter, there is a clear negative relationship between veh
 
 #### Multiple Figures in One Chunk
 
-When a code chunk produces multiple figures, you can control the layout:
+When a code chunk produces multiple figures, you can control the layout using chunk settings like `fig-subcap` and `layout-ncol`:
 
 ```{r}
 #| label: fig-mpg-panels

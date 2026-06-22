@@ -1735,18 +1735,12 @@ vector.</p>
 <div id="packages" class="section level1">
 <h1>6. Packages</h1>
 <p>R comes with many built-in functions, but most of what we do uses
-<strong>packages</strong> — add-on collections of functions. Think of
-packages like toolkits that you can pick and choose to bring with you on
-your project. Because there are so many toolkits (i.e., packages) to
-choose from, we need to tell R up front on what packages we need to do
-the job we want.</p>
-<p>We do this with two steps, and people often confuse them:</p>
+<strong>packages</strong> — add-on collections of functions. Two steps,
+and people often confuse them:</p>
 <ul>
 <li><strong>Install once per computer</strong> with
 <code>install.packages()</code>. (You’ve likely done this before the
-workshop.). It’s best to run this function in the Console, so that you
-won’t need to re-install the same package over and over again every time
-you run your script.</li>
+workshop.)</li>
 <li><strong>Load every session</strong> with <code>library()</code>, at
 the top of your script.</li>
 </ul>
@@ -1760,7 +1754,8 @@ for wrangling). Loading it loads them all.</p>
 <div id="exercises-5" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
-<li>Load <code>tidyverse</code> with <code>library()</code>.</li>
+<li>Load <code>tidyverse</code> and <code>here</code> with
+<code>library()</code>.</li>
 <li>In your own words, what’s the difference between
 <code>install.packages()</code> and <code>library()</code>?</li>
 </ol>
@@ -1804,18 +1799,16 @@ to the new location.</li>
 </div>
 <div id="reading-in-data" class="section level1">
 <h1>8. Reading In Data</h1>
-<p>After setting your working directory to your preferred using
-<code>setwd()</code>, we will use <code>read_csv()</code> (from the
-tidyverse) to load our first dataset into R. However, to organize our
-files, let’s create a subfolder called “Data” and drop the 3 CSV files
-you downloaded from GitHub into this folder</p>
-<p>Then, let’s load the Oregon QCEW employment data we’ll use for the
-rest of the day:</p>
+<p>After setting your working directory using <code>setwd()</code>, we
+will use <code>read_csv()</code> (from the tidyverse) to load our first
+dataset into R. Let’s load the Oregon QCEW employment data we’ll use for
+the rest of the day:</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>oregon_qcew <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;Data/oregon_counties_qcew.csv&quot;</span>)</span></code></pre></div>
-<p>Notice how, once we’ve set the working directory, R knows which
-master folder to go to, but we still need to specify the sub-folder and
-the file name.</p>
-<p>Let’s get an initial view of the data we just loaded:</p>
+<p><strong>NOTE</strong>: Since we stored the data files in a subfolder
+within our working directory called <em>Data</em>, we want to add
+<em>Data/</em> before the file name so R knows where to look for this
+file</p>
+<p>Always look at what you just loaded:</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="fu">summary</span>(oregon_qcew)   <span class="co"># summary stats of the variables in the data</span></span></code></pre></div>
 <pre><code>##     county              naics        establishments    avg_employment    
 ##  Length:13909       Min.   :111110   Min.   :   0.00   Min.   :    0.00  
@@ -1911,10 +1904,15 @@ script from the top.</li>
 <code>&lt;-</code></li>
 <li>work with <strong>vectors</strong> and <strong>data
 frames</strong></li>
-<li><strong>install</strong> and <strong>load</strong> packages</li>
-<li>find files with an <strong>RStudio Project</strong> and
-<strong><code>here()</code></strong></li>
-<li><strong>read in a CSV</strong> and look at it</li>
+<li><strong>install</strong> and <strong>load</strong> packages like
+<strong>tidyverse</strong> with <strong>install.packages()</strong>
+(remember that you only need to run this once) and
+<strong>library()</strong> (run this for the package you want at the
+beginning of every session)</li>
+<li>set your <strong>working directory</strong> with
+<strong>setwd()</strong></li>
+<li><strong>read in a CSV</strong> with <strong>read_csv()</strong> and
+look at it with functions like <strong>summary()</strong></li>
 </ul>
 <p>That last point — <code>oregon_qcew</code> loaded and ready — is the
 starting line for the Data Wrangling session next.</p>

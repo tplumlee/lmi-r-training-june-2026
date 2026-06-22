@@ -209,8 +209,10 @@ setwd("C:/Users/Paul Liu/Desktop/R Course (June 2-3)")
 After setting your working directory using `setwd()`, we will use `read_csv()` (from the tidyverse) to load our first dataset into R. Let's load the Oregon QCEW employment data we'll use for the rest of the day:
 
 ```{r}
-oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+oregon_qcew <- read_csv("Data/oregon_counties_qcew.csv")
 ```
+
+**NOTE**: Since we stored the data files in a subfolder within our working directory called *Data*, we want to add *Data/* before the file name so R knows where to look for this file 
 
 Always look at what you just loaded:
 
@@ -260,9 +262,9 @@ You can now:
 - run code in the **Console** and save it in a **script**
 - store values in **objects** with `<-`
 - work with **vectors** and **data frames**
-- **install** and **load** packages
-- find files with an **RStudio Project** and **`here()`**
-- **read in a CSV** and look at it
+- **install** and **load** packages like **tidyverse** with **install.packages()** (remember that you only need to run this once) and **library()** (run this for the package you want at the beginning of every session)
+- set your **working directory** with **setwd()** 
+- **read in a CSV** with **read_csv()** and look at it with functions like **summary()**
 
 That last point — `oregon_qcew` loaded and ready — is the starting line for the Data Wrangling session next.
 

@@ -1580,10 +1580,12 @@ Intermediate</h4>
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>This section covers the core verbs of the <strong>tidyverse</strong>
-for working with data. We’ll use a prepared extract of Oregon QCEW
+<p>This section covers the core functions of the
+<strong>tidyverse</strong> package that are essential for cleaning and
+manipulating tabular data. We’ll use a prepared extract of Oregon QCEW
 (Quarterly Census of Employment and Wages) data: private-sector
-employment and wages by county and industry for 2025.</p>
+employment and wages by county and industry for the first 3 quarters of
+2025.</p>
 <p>Almost everything here comes from one package, <strong>dplyr</strong>
 (with a little <strong>tidyr</strong> for reshaping at the end). Loading
 <code>tidyverse</code> brings them both, plus the pipe.</p>
@@ -1608,20 +1610,20 @@ employment and wages by county and industry for 2025.</p>
 <p>Always look at a data frame before you start changing it. Three quick
 ways:</p>
 <ul>
-<li><code>dim()</code> — how many rows and columns</li>
 <li><code>names()</code> - column names in the dataset</li>
+<li><code>summary()</code> - summary statistics of each column</li>
+<li><code>dim()</code> — how many rows and columns</li>
 <li><code>glimpse()</code> — column names, types, and the first few
 values</li>
-<li><code>summary()</code> - summary statistics of each column</li>
-<li><code>View()</code> (capital V) — open a spreadsheet-style viewer in
-RStudio</li>
+<li><code>view()</code> — opens a spreadsheet-style viewer in RStudio.
+This is the same as clicking the white square icon to the right of a
+data frame in your Environment window. NOTE: The <code>tidyverse</code>
+package needs to be loaded for <code>view()</code> to work.</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">dim</span>(oregon_qcew)</span></code></pre></div>
-<pre><code>## [1] 13909     6</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">names</span>(oregon_qcew)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">names</span>(oregon_qcew)</span></code></pre></div>
 <pre><code>## [1] &quot;county&quot;          &quot;naics&quot;           &quot;establishments&quot;  &quot;avg_employment&quot; 
 ## [5] &quot;avg_wkly_wage&quot;   &quot;avg_annual_wage&quot;</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">summary</span>(oregon_qcew)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">summary</span>(oregon_qcew)</span></code></pre></div>
 <pre><code>##     county              naics        establishments    avg_employment    
 ##  Length:13909       Min.   :111110   Min.   :   0.00   Min.   :    0.00  
 ##  Class :character   1st Qu.:332813   1st Qu.:   1.00   1st Qu.:    0.00  
@@ -1636,6 +1638,8 @@ RStudio</li>
 ##  Mean   :  400.4   Mean   : 20821  
 ##  3rd Qu.:  703.0   3rd Qu.: 36556  
 ##  Max.   :12514.0   Max.   :650728</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">dim</span>(oregon_qcew)</span></code></pre></div>
+<pre><code>## [1] 13909     6</code></pre>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">glimpse</span>(oregon_qcew)</span></code></pre></div>
 <pre><code>## Rows: 13,909
 ## Columns: 6
@@ -1645,8 +1649,8 @@ RStudio</li>
 ## $ avg_employment  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
 ## $ avg_wkly_wage   &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
 ## $ avg_annual_wage &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</code></pre>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># View(oregon_qcew)</span></span></code></pre></div>
-<p>Each row is one industry in one county:</p>
+<p>Looking at the data, we can tell that each row is one industry in one
+county. The columns include:</p>
 <ul>
 <li><code>county</code> — county name</li>
 <li><code>naics</code> — 6-digit industry code (no name yet — we’ll add
@@ -1674,7 +1678,7 @@ columns.</li>
 <p>The pipe <code>%&gt;%</code> takes the thing on its left and feeds it
 into the function on its right. These two lines do exactly the same
 thing:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">head</span>(oregon_qcew)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">head</span>(oregon_qcew)</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 6
 ##   county       naics establishments avg_employment avg_wkly_wage avg_annual_wage
 ##   &lt;chr&gt;        &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
@@ -1684,7 +1688,7 @@ thing:</p>
 ## 4 Baker Coun… 111421              2              0             0               0
 ## 5 Baker Coun… 111940              1              0             0               0
 ## 6 Baker Coun… 111998              4              0             0               0</code></pre>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 6
 ##   county       naics establishments avg_employment avg_wkly_wage avg_annual_wage
 ##   &lt;chr&gt;        &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
@@ -1694,20 +1698,22 @@ thing:</p>
 ## 4 Baker Coun… 111421              2              0             0               0
 ## 5 Baker Coun… 111940              1              0             0               0
 ## 6 Baker Coun… 111998              4              0             0               0</code></pre>
-<p>The pipe is most useful when you do several things in a row. Read it
-top to bottom, like a recipe:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
-<pre><code>## # A tibble: 6 × 6
-##   county       naics establishments avg_employment avg_wkly_wage avg_annual_wage
-##   &lt;chr&gt;        &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
-## 1 Multnomah … 111110              1              0             0               0
-## 2 Multnomah … 111211              2              0             0               0
-## 3 Multnomah … 111219             19              0             0               0
-## 4 Multnomah … 111332              4              0             0               0
-## 5 Multnomah … 111334              2              0             0               0
-## 6 Multnomah … 111411              2              0             0               0</code></pre>
+<p>The pipe is most useful when you want do multiple things in a row.
+It’s a powerful tool to string together several functions/operations
+into one command. You can think of the pipe operator like the word
+<strong>“then”</strong> - you tell R to run your first function, then
+your second function, then your third, etc. As such, note that the order
+of operations is critical. We want thoughtfully construct pipelines in a
+way that orders the data cleaning/manipulation/analysis process in the
+way you intend.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County, Oregon&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 0 × 6
+## # ℹ 6 variables: county &lt;chr&gt;, naics &lt;dbl&gt;, establishments &lt;dbl&gt;,
+## #   avg_employment &lt;dbl&gt;, avg_wkly_wage &lt;dbl&gt;, avg_annual_wage &lt;dbl&gt;</code></pre>
+<p><strong>NOTE:</strong> The keyboard short cut for %&gt;% is
+<code>Ctrl + Shift + M</code></p>
 <div id="exercises-1" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1720,9 +1726,9 @@ top to bottom, like a recipe:</p>
 <div id="choosing-columns-with-select" class="section level1">
 <h1>3. Choosing Columns with <code>select()</code></h1>
 <p><code>select()</code> keeps only the columns you name.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_employment) <span class="sc">%&gt;%</span></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_employment) <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 3
 ##   county        naics avg_employment
 ##   &lt;chr&gt;         &lt;dbl&gt;          &lt;dbl&gt;
@@ -1734,9 +1740,9 @@ top to bottom, like a recipe:</p>
 ## 6 Baker County 111998              0</code></pre>
 <p>You can drop a column instead by putting a minus sign in front of
 it:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>avg_annual_wage) <span class="sc">%&gt;%</span></span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>avg_annual_wage) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 5
 ##   county        naics establishments avg_employment avg_wkly_wage
 ##   &lt;chr&gt;         &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;
@@ -1746,12 +1752,29 @@ it:</p>
 ## 4 Baker County 111421              2              0             0
 ## 5 Baker County 111940              1              0             0
 ## 6 Baker County 111998              4              0             0</code></pre>
+<p>You can also use <strong>select()</strong> to reorder columns.
+Suppose we want to move <code>avg_employment</code> to the
+beginning:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> </span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  <span class="fu">select</span>(avg_employment, <span class="fu">everything</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 6 × 6
+##   avg_employment county       naics establishments avg_wkly_wage avg_annual_wage
+##            &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
+## 1              0 Baker Coun… 111140              1             0               0
+## 2              0 Baker Coun… 111211              6             0               0
+## 3              0 Baker Coun… 111219              1             0               0
+## 4              0 Baker Coun… 111421              2             0               0
+## 5              0 Baker Coun… 111940              1             0               0
+## 6              0 Baker Coun… 111998              4             0               0</code></pre>
 <div id="exercises-2" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
 <li>Select just <code>county</code>, <code>naics</code>, and
 <code>avg_annual_wage</code>.</li>
 <li>Select everything except <code>establishments</code>.</li>
+<li>Put <code>avg_employment</code> as the first column in the
+dataset</li>
 </ol>
 <hr />
 </div>
@@ -1759,26 +1782,15 @@ it:</p>
 <div id="choosing-rows-with-filter" class="section level1">
 <h1>4. Choosing Rows with <code>filter()</code></h1>
 <p><code>filter()</code> keeps only the rows that meet a condition.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County&quot;</span>)</span></code></pre></div>
-<pre><code>## # A tibble: 817 × 6
-##    county      naics establishments avg_employment avg_wkly_wage avg_annual_wage
-##    &lt;chr&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
-##  1 Multnomah… 111110              1              0             0               0
-##  2 Multnomah… 111211              2              0             0               0
-##  3 Multnomah… 111219             19              0             0               0
-##  4 Multnomah… 111332              4              0             0               0
-##  5 Multnomah… 111334              2              0             0               0
-##  6 Multnomah… 111411              2              0             0               0
-##  7 Multnomah… 111419             15              0             0               0
-##  8 Multnomah… 111421             30              0             0               0
-##  9 Multnomah… 111422              2              0             0               0
-## 10 Multnomah… 111998             48            337           822           42744
-## # ℹ 807 more rows</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County, Oregon&quot;</span>)</span></code></pre></div>
+<pre><code>## # A tibble: 0 × 6
+## # ℹ 6 variables: county &lt;chr&gt;, naics &lt;dbl&gt;, establishments &lt;dbl&gt;,
+## #   avg_employment &lt;dbl&gt;, avg_wkly_wage &lt;dbl&gt;, avg_annual_wage &lt;dbl&gt;</code></pre>
 <p>Use <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>,
 <code>&lt;=</code> for numbers:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>  <span class="fu">filter</span>(avg_employment <span class="sc">&gt;</span> <span class="dv">1000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  <span class="fu">filter</span>(avg_employment <span class="sc">&gt;</span> <span class="dv">1000</span>)</span></code></pre></div>
 <pre><code>## # A tibble: 269 × 6
 ##    county      naics establishments avg_employment avg_wkly_wage avg_annual_wage
 ##    &lt;chr&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
@@ -1795,26 +1807,65 @@ it:</p>
 ## # ℹ 259 more rows</code></pre>
 <p>List several conditions separated by commas — a row has to meet
 <em>all</em> of them:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County&quot;</span>, avg_employment <span class="sc">&gt;</span> <span class="dv">1000</span>)</span></code></pre></div>
-<pre><code>## # A tibble: 92 × 6
-##    county      naics establishments avg_employment avg_wkly_wage avg_annual_wage
-##    &lt;chr&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
-##  1 Multnomah… 236115            496           1436          1357           70564
-##  2 Multnomah… 236118            326           1308          1349           70148
-##  3 Multnomah… 238212             50           3946          2270          118040
-##  4 Multnomah… 238221            158           1365          1480           76960
-##  5 Multnomah… 238222             49           2551          2211          114972
-##  6 Multnomah… 311812             42           1535          1093           56836
-##  7 Multnomah… 323111             80           1174          1361           70772
-##  8 Multnomah… 334413             23           1681          1988          103376
-##  9 Multnomah… 424480             13           1082          1290           67080
-## 10 Multnomah… 424490             72           1135          1481           77012
-## # ℹ 82 more rows</code></pre>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">==</span> <span class="st">&quot;Multnomah County, Oregon&quot;</span>, avg_employment <span class="sc">&gt;</span> <span class="dv">1000</span>)</span></code></pre></div>
+<pre><code>## # A tibble: 0 × 6
+## # ℹ 6 variables: county &lt;chr&gt;, naics &lt;dbl&gt;, establishments &lt;dbl&gt;,
+## #   avg_employment &lt;dbl&gt;, avg_wkly_wage &lt;dbl&gt;, avg_annual_wage &lt;dbl&gt;</code></pre>
 <p>To keep rows matching any value in a list, use <code>%in%</code>:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Baker County&quot;</span>, <span class="st">&quot;Benton County&quot;</span>))</span></code></pre></div>
-<pre><code>## # A tibble: 673 × 6
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  <span class="fu">filter</span>(county <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Baker County, Oregon&quot;</span>, <span class="st">&quot;Benton County, Oregon&quot;</span>))</span></code></pre></div>
+<pre><code>## # A tibble: 0 × 6
+## # ℹ 6 variables: county &lt;chr&gt;, naics &lt;dbl&gt;, establishments &lt;dbl&gt;,
+## #   avg_employment &lt;dbl&gt;, avg_wkly_wage &lt;dbl&gt;, avg_annual_wage &lt;dbl&gt;</code></pre>
+<p>In R, the symbol for negation is “<strong>!</strong>”. Now, notice
+that there is a value in <code>county</code> called “<em>Unknown or
+Undefined</em>”. And suppose that we want to filter out the rows where
+“<em>Unknown or Undefined</em>” is present in the <code>county</code>
+column:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> <span class="fu">count</span>(county) <span class="sc">%&gt;%</span> <span class="fu">print</span>(<span class="at">n=</span><span class="dv">50</span>)  <span class="co"># This provides a list of all possible values in the &quot;county&quot; column</span></span></code></pre></div>
+<pre><code>## # A tibble: 37 × 2
+##    county                   n
+##    &lt;chr&gt;                &lt;int&gt;
+##  1 Baker County           235
+##  2 Benton County          438
+##  3 Clackamas County       749
+##  4 Clatsop County         354
+##  5 Columbia County        337
+##  6 Coos County            387
+##  7 Crook County           264
+##  8 Curry County           251
+##  9 Deschutes County       661
+## 10 Douglas County         462
+## 11 Gilliam County          74
+## 12 Grant County           119
+## 13 Harney County          116
+## 14 Hood River County      325
+## 15 Jackson County         615
+## 16 Jefferson County       219
+## 17 Josephine County       450
+## 18 Klamath County         380
+## 19 Lake County            140
+## 20 Lane County            710
+## 21 Lincoln County         364
+## 22 Linn County            504
+## 23 Malheur County         283
+## 24 Marion County          678
+## 25 Morrow County          151
+## 26 Multnomah County       817
+## 27 Polk County            383
+## 28 Sherman County          45
+## 29 Tillamook County       257
+## 30 Umatilla County        399
+## 31 Union County           262
+## 32 Unknown Or Undefined   743
+## 33 Wallowa County         172
+## 34 Wasco County           279
+## 35 Washington County      752
+## 36 Wheeler County          42
+## 37 Yamhill County         492</code></pre>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> <span class="fu">filter</span>(county <span class="sc">!=</span> <span class="st">&quot;Unknown or Undefined&quot;</span>)</span></code></pre></div>
+<pre><code>## # A tibble: 13,909 × 6
 ##    county      naics establishments avg_employment avg_wkly_wage avg_annual_wage
 ##    &lt;chr&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
 ##  1 Baker Cou… 111140              1              0             0               0
@@ -1827,7 +1878,27 @@ it:</p>
 ##  8 Baker Cou… 112910              1              0             0               0
 ##  9 Baker Cou… 112990              1              0             0               0
 ## 10 Baker Cou… 113310              3              0             0               0
-## # ℹ 663 more rows</code></pre>
+## # ℹ 13,899 more rows</code></pre>
+<p><strong>filter()</strong> is also commonly used to deal with
+<em>NA</em> values. Let’s suppose that there are some values in the
+<code>avg_employment</code> column coded as <em>NA</em>, and we want to
+filter out those rows:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> </span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(avg_employment))</span></code></pre></div>
+<pre><code>## # A tibble: 13,909 × 6
+##    county      naics establishments avg_employment avg_wkly_wage avg_annual_wage
+##    &lt;chr&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
+##  1 Baker Cou… 111140              1              0             0               0
+##  2 Baker Cou… 111211              6              0             0               0
+##  3 Baker Cou… 111219              1              0             0               0
+##  4 Baker Cou… 111421              2              0             0               0
+##  5 Baker Cou… 111940              1              0             0               0
+##  6 Baker Cou… 111998              4              0             0               0
+##  7 Baker Cou… 112111             22              0             0               0
+##  8 Baker Cou… 112910              1              0             0               0
+##  9 Baker Cou… 112990              1              0             0               0
+## 10 Baker Cou… 113310              3              0             0               0
+## # ℹ 13,899 more rows</code></pre>
 <div id="exercises-3" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1843,10 +1914,10 @@ it:</p>
 <h1>5. Creating Columns with <code>mutate()</code></h1>
 <p><code>mutate()</code> adds a new column calculated from existing
 ones.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wage_thousands =</span> avg_annual_wage <span class="sc">/</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_annual_wage, wage_thousands) <span class="sc">%&gt;%</span></span>
-<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wage_thousands =</span> avg_annual_wage <span class="sc">/</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_annual_wage, wage_thousands) <span class="sc">%&gt;%</span></span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 4
 ##   county        naics avg_annual_wage wage_thousands
 ##   &lt;chr&gt;         &lt;dbl&gt;           &lt;dbl&gt;          &lt;dbl&gt;
@@ -1857,10 +1928,10 @@ ones.</p>
 ## 5 Baker County 111940               0              0
 ## 6 Baker County 111998               0              0</code></pre>
 <p>You can make several columns in one <code>mutate()</code>:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wage_thousands =</span> avg_annual_wage <span class="sc">/</span> <span class="dv">1000</span>,</span>
-<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>         <span class="at">emp_per_estab  =</span> avg_employment <span class="sc">/</span> establishments) <span class="sc">%&gt;%</span></span>
-<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wage_thousands =</span> avg_annual_wage <span class="sc">/</span> <span class="dv">1000</span>,</span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>         <span class="at">emp_per_estab  =</span> avg_employment <span class="sc">/</span> establishments) <span class="sc">%&gt;%</span></span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 8
 ##   county       naics establishments avg_employment avg_wkly_wage avg_annual_wage
 ##   &lt;chr&gt;        &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
@@ -1873,15 +1944,16 @@ ones.</p>
 ## # ℹ 2 more variables: wage_thousands &lt;dbl&gt;, emp_per_estab &lt;dbl&gt;</code></pre>
 <p>To create a column based on conditions, use <code>case_when()</code>.
 Each line is a condition on the left of the <code>~</code> and the value
-to assign on the right.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size =</span> <span class="fu">case_when</span>(</span>
-<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>    avg_employment <span class="sc">&lt;</span>  <span class="dv">50</span>                        <span class="sc">~</span> <span class="st">&quot;Small&quot;</span>,</span>
-<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>    avg_employment <span class="sc">&gt;=</span> <span class="dv">50</span> <span class="sc">&amp;</span> avg_employment <span class="sc">&lt;</span> <span class="dv">500</span> <span class="sc">~</span> <span class="st">&quot;Medium&quot;</span>,</span>
-<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a>    avg_employment <span class="sc">&gt;=</span> <span class="dv">500</span>                       <span class="sc">~</span> <span class="st">&quot;Large&quot;</span></span>
-<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_employment, size) <span class="sc">%&gt;%</span></span>
-<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+to assign on the right. This is very useful when you want to re-code a
+continuous variable into a categorical one.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size =</span> <span class="fu">case_when</span>(</span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a>    avg_employment <span class="sc">&lt;</span>  <span class="dv">50</span>                        <span class="sc">~</span> <span class="st">&quot;Small&quot;</span>,</span>
+<span id="cb40-4"><a href="#cb40-4" tabindex="-1"></a>    avg_employment <span class="sc">&gt;=</span> <span class="dv">50</span> <span class="sc">&amp;</span> avg_employment <span class="sc">&lt;</span> <span class="dv">500</span> <span class="sc">~</span> <span class="st">&quot;Medium&quot;</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" tabindex="-1"></a>    avg_employment <span class="sc">&gt;=</span> <span class="dv">500</span>                       <span class="sc">~</span> <span class="st">&quot;Large&quot;</span></span>
+<span id="cb40-6"><a href="#cb40-6" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb40-7"><a href="#cb40-7" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, avg_employment, size) <span class="sc">%&gt;%</span></span>
+<span id="cb40-8"><a href="#cb40-8" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 4
 ##   county        naics avg_employment size 
 ##   &lt;chr&gt;         &lt;dbl&gt;          &lt;dbl&gt; &lt;chr&gt;
@@ -1891,6 +1963,31 @@ to assign on the right.</p>
 ## 4 Baker County 111421              0 Small
 ## 5 Baker County 111940              0 Small
 ## 6 Baker County 111998              0 Small</code></pre>
+<p><strong>mutate()</strong> can also be used to manipulate string
+variables. For example, the county names in the <code>county</code>
+column currently list as something like “Baker County”. What if we want
+only the shorthand name “Baker” or “Multnomah”? We can use a tidyverse
+function called <code>str_replace()</code> inside a
+<code>mutate()</code> function to create a new column that contains only
+the shorthand name.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> </span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">county =</span> <span class="fu">str_replace</span>(county, <span class="st">&quot; County&quot;</span>, <span class="st">&quot;&quot;</span>)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 6 × 6
+##   county  naics establishments avg_employment avg_wkly_wage avg_annual_wage
+##   &lt;chr&gt;   &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
+## 1 Baker  111140              1              0             0               0
+## 2 Baker  111211              6              0             0               0
+## 3 Baker  111219              1              0             0               0
+## 4 Baker  111421              2              0             0               0
+## 5 Baker  111940              1              0             0               0
+## 6 Baker  111998              4              0             0               0</code></pre>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="co"># The arguments in str_replace are 1) the column in question, 2) the substring we want to replace, and 3) what we want to replace the substring with.</span></span></code></pre></div>
+<p><strong>NOTE:</strong> In this instance, we are directly changing the
+values in the <code>county</code> column. If you want to keep the
+original county column, name the new column you’re creating in
+<code>mutate()</code> as something other than “county”, like
+“county_abbreviated”.</p>
 <div id="exercises-4" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1907,10 +2004,10 @@ column: “Low”, “Medium”, or “High”, using wage cutoffs you choose.</
 <div id="renaming-columns-with-rename" class="section level1">
 <h1>6. Renaming Columns with <code>rename()</code></h1>
 <p>The pattern is <code>rename(new_name = old_name)</code>:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">employment =</span> avg_employment,</span>
-<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a>         <span class="at">annual_wage =</span> avg_annual_wage) <span class="sc">%&gt;%</span></span>
-<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">employment =</span> avg_employment,</span>
+<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>         <span class="at">annual_wage =</span> avg_annual_wage) <span class="sc">%&gt;%</span></span>
+<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 6
 ##   county        naics establishments employment avg_wkly_wage annual_wage
 ##   &lt;chr&gt;         &lt;dbl&gt;          &lt;dbl&gt;      &lt;dbl&gt;         &lt;dbl&gt;       &lt;dbl&gt;
@@ -1937,9 +2034,9 @@ column: “Low”, “Medium”, or “High”, using wage cutoffs you choose.</
 <code>summarize()</code> collapses each group down to a single summary
 row. Together they answer questions like “what’s the total for each
 county?”</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
-<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment))</span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
+<span id="cb47-3"><a href="#cb47-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment))</span></code></pre></div>
 <pre><code>## # A tibble: 37 × 2
 ##    county           total_emp
 ##    &lt;chr&gt;                &lt;dbl&gt;
@@ -1961,11 +2058,11 @@ rows in the group)</li>
 <li><code>arrange()</code> sorts the result; wrap a column in
 <code>desc()</code> for high-to-low</li>
 </ul>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
-<span id="cb39-3"><a href="#cb39-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp    =</span> <span class="fu">sum</span>(avg_employment),</span>
-<span id="cb39-4"><a href="#cb39-4" tabindex="-1"></a>            <span class="at">n_industries =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb39-5"><a href="#cb39-5" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp))</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
+<span id="cb49-3"><a href="#cb49-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp    =</span> <span class="fu">sum</span>(avg_employment),</span>
+<span id="cb49-4"><a href="#cb49-4" tabindex="-1"></a>            <span class="at">n_industries =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span>  <span class="co"># n() counts the number of rows in a group</span></span>
+<span id="cb49-5"><a href="#cb49-5" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp))  <span class="co"># Sorts the variable &quot;total_emp&quot; from highest to lowest</span></span></code></pre></div>
 <pre><code>## # A tibble: 37 × 3
 ##    county               total_emp n_industries
 ##    &lt;chr&gt;                    &lt;dbl&gt;        &lt;int&gt;
@@ -1980,6 +2077,14 @@ rows in the group)</li>
 ##  9 Linn County              23112          504
 ## 10 Yamhill County           21451          492
 ## # ℹ 27 more rows</code></pre>
+<p><strong>NOTE:</strong> After we apply <em>group_by()</em> and
+<em>summarize()</em>, the only columns we are left with are 1) what’s in
+our <em>group_by()</em> function (in this example, <code>county</code>)
+and the variables we create in our <em>summarize()</em> function (in
+this example, <code>total_emp</code> and <code>n_industries</code>).
+<strong>All other columns from the original dataset (i.e., oregon_qcew)
+disappear, and including them in subsequent functions in the pipeline
+will result in an error.</strong></p>
 <div id="exercises-6" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1997,7 +2102,7 @@ rows in the group)</li>
 <strong>join</strong> matches them up on a shared column (a “key”).</p>
 <p>Our QCEW data has industry codes but no names. The crosswalk has
 both:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a>naics_crosswalk <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a>naics_crosswalk <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 2
 ##    naics industry_name                        
 ##    &lt;dbl&gt; &lt;chr&gt;                                
@@ -2009,48 +2114,46 @@ both:</p>
 ## 6 111199 All other grain farming</code></pre>
 <p><code>left_join()</code> keeps every row of the first table and adds
 matching columns from the second:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a>oregon_qcew <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a>  <span class="fu">left_join</span>(naics_crosswalk, <span class="at">by =</span> <span class="st">&quot;naics&quot;</span>)</span>
-<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a></span>
-<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, industry_name, avg_employment) <span class="sc">%&gt;%</span></span>
-<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(avg_employment)) <span class="sc">%&gt;%</span> </span>
-<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a>oregon_qcew <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb53-2"><a href="#cb53-2" tabindex="-1"></a>  <span class="fu">left_join</span>(naics_crosswalk, <span class="at">by =</span> <span class="st">&quot;naics&quot;</span>)</span>
+<span id="cb53-3"><a href="#cb53-3" tabindex="-1"></a></span>
+<span id="cb53-4"><a href="#cb53-4" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb53-5"><a href="#cb53-5" tabindex="-1"></a>  <span class="fu">select</span>(county, naics, industry_name, avg_employment) <span class="sc">%&gt;%</span></span>
+<span id="cb53-6"><a href="#cb53-6" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 4
-##   county             naics industry_name                          avg_employment
-##   &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;                                           &lt;dbl&gt;
-## 1 Washington County 334413 Semiconductor and related device manu…          21207
-## 2 Multnomah County  722511 Full-service restaurants                        16652
-## 3 Washington County 551114 Corporate, subsidiary, and regional m…          16317
-## 4 Multnomah County  551114 Corporate, subsidiary, and regional m…          15482
-## 5 Multnomah County  622110 General medical and surgical hospitals          14610
-## 6 Multnomah County  722513 Limited-service restaurants                     11117</code></pre>
+##   county        naics industry_name                               avg_employment
+##   &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;                                                &lt;dbl&gt;
+## 1 Baker County 111140 Wheat farming                                            0
+## 2 Baker County 111211 Potato farming                                           0
+## 3 Baker County 111219 Other vegetable (except potato) and melon …              0
+## 4 Baker County 111421 Nursery and tree production                              0
+## 5 Baker County 111940 Hay farming                                              0
+## 6 Baker County 111998 All other miscellaneous crop farming                     0</code></pre>
 <p>Same idea to add fips codes to the county names from the FIPS lookup
-file, the data frame <strong>oregon_fips</strong>:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a>oregon_qcew <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>  <span class="fu">left_join</span>(oregon_fips, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;county&quot;</span> <span class="ot">=</span> <span class="st">&quot;county_name&quot;</span>))</span>
-<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a></span>
-<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> </span>
-<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a>  <span class="fu">select</span>(county, fips, industry_name, avg_employment) <span class="sc">%&gt;%</span></span>
-<span id="cb45-6"><a href="#cb45-6" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(avg_employment)) <span class="sc">%&gt;%</span> </span>
-<span id="cb45-7"><a href="#cb45-7" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
-<pre><code>## # A tibble: 6 × 4
-##   county             fips industry_name                           avg_employment
-##   &lt;chr&gt;             &lt;dbl&gt; &lt;chr&gt;                                            &lt;dbl&gt;
-## 1 Washington County 41067 Semiconductor and related device manuf…          21207
-## 2 Multnomah County  41051 Full-service restaurants                         16652
-## 3 Washington County 41067 Corporate, subsidiary, and regional ma…          16317
-## 4 Multnomah County  41051 Corporate, subsidiary, and regional ma…          15482
-## 5 Multnomah County  41051 General medical and surgical hospitals           14610
-## 6 Multnomah County  41051 Limited-service restaurants                      11117</code></pre>
+file, the data frame <strong>oregon_fips</strong>. Note that if the
+shared columns are named differently between the two files we’re
+joining, we use the syntax <em>by = c(“column name from dataset A” =
+“column name from dataset B”)</em></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" tabindex="-1"></a>oregon_qcew <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb55-2"><a href="#cb55-2" tabindex="-1"></a>  <span class="fu">left_join</span>(oregon_fips, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;county&quot;</span> <span class="ot">=</span> <span class="st">&quot;county_name&quot;</span>))</span>
+<span id="cb55-3"><a href="#cb55-3" tabindex="-1"></a></span>
+<span id="cb55-4"><a href="#cb55-4" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span> <span class="fu">select</span>(fips, county, avg_employment) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 6 × 3
+##    fips county       avg_employment
+##   &lt;dbl&gt; &lt;chr&gt;                 &lt;dbl&gt;
+## 1 41001 Baker County              0
+## 2 41001 Baker County              0
+## 3 41001 Baker County              0
+## 4 41001 Baker County              0
+## 5 41001 Baker County              0
+## 6 41001 Baker County              0</code></pre>
 <p>Now that we have the industry names, we can answer friendlier
-questions like “what are the top industries in Oregon by
-employment”?</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a>  <span class="fu">group_by</span>(industry_name) <span class="sc">%&gt;%</span></span>
-<span id="cb47-3"><a href="#cb47-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment)) <span class="sc">%&gt;%</span></span>
-<span id="cb47-4"><a href="#cb47-4" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp)) <span class="sc">%&gt;%</span></span>
-<span id="cb47-5"><a href="#cb47-5" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)</span></code></pre></div>
+questions:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb57-2"><a href="#cb57-2" tabindex="-1"></a>  <span class="fu">group_by</span>(industry_name) <span class="sc">%&gt;%</span></span>
+<span id="cb57-3"><a href="#cb57-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-4"><a href="#cb57-4" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-5"><a href="#cb57-5" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)</span></code></pre></div>
 <pre><code>## # A tibble: 10 × 2
 ##    industry_name                                                       total_emp
 ##    &lt;chr&gt;                                                                   &lt;dbl&gt;
@@ -2093,13 +2196,13 @@ both</li>
 <p>Our two wage columns hold the same kind of value (a wage) in two
 units. We can stack them into one column with
 <code>pivot_longer()</code>:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a>wage_long <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a>  <span class="fu">select</span>(county, industry_name, avg_wkly_wage, avg_annual_wage) <span class="sc">%&gt;%</span></span>
-<span id="cb49-3"><a href="#cb49-3" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols      =</span> <span class="fu">c</span>(avg_wkly_wage, avg_annual_wage),</span>
-<span id="cb49-4"><a href="#cb49-4" tabindex="-1"></a>               <span class="at">names_to  =</span> <span class="st">&quot;wage_type&quot;</span>,</span>
-<span id="cb49-5"><a href="#cb49-5" tabindex="-1"></a>               <span class="at">values_to =</span> <span class="st">&quot;wage&quot;</span>)</span>
-<span id="cb49-6"><a href="#cb49-6" tabindex="-1"></a></span>
-<span id="cb49-7"><a href="#cb49-7" tabindex="-1"></a>wage_long <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" tabindex="-1"></a>wage_long <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb59-2"><a href="#cb59-2" tabindex="-1"></a>  <span class="fu">select</span>(county, industry_name, avg_wkly_wage, avg_annual_wage) <span class="sc">%&gt;%</span></span>
+<span id="cb59-3"><a href="#cb59-3" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols      =</span> <span class="fu">c</span>(avg_wkly_wage, avg_annual_wage),</span>
+<span id="cb59-4"><a href="#cb59-4" tabindex="-1"></a>               <span class="at">names_to  =</span> <span class="st">&quot;wage_type&quot;</span>,</span>
+<span id="cb59-5"><a href="#cb59-5" tabindex="-1"></a>               <span class="at">values_to =</span> <span class="st">&quot;wage&quot;</span>)</span>
+<span id="cb59-6"><a href="#cb59-6" tabindex="-1"></a></span>
+<span id="cb59-7"><a href="#cb59-7" tabindex="-1"></a>wage_long <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 4
 ##   county       industry_name                                     wage_type  wage
 ##   &lt;chr&gt;        &lt;chr&gt;                                             &lt;chr&gt;     &lt;dbl&gt;
@@ -2118,10 +2221,10 @@ values</li>
 </ul>
 <p><code>pivot_wider()</code> does the reverse, spreading one column
 back out into several:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a>wage_long <span class="sc">%&gt;%</span></span>
-<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from  =</span> wage_type,</span>
-<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a>              <span class="at">values_from =</span> wage) <span class="sc">%&gt;%</span></span>
-<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" tabindex="-1"></a>wage_long <span class="sc">%&gt;%</span></span>
+<span id="cb61-2"><a href="#cb61-2" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from  =</span> wage_type,</span>
+<span id="cb61-3"><a href="#cb61-3" tabindex="-1"></a>              <span class="at">values_from =</span> wage) <span class="sc">%&gt;%</span></span>
+<span id="cb61-4"><a href="#cb61-4" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 4
 ##   county       industry_name                       avg_wkly_wage avg_annual_wage
 ##   &lt;chr&gt;        &lt;chr&gt;                                       &lt;dbl&gt;           &lt;dbl&gt;
@@ -2139,36 +2242,88 @@ original? Why?</li>
 <li>Use <code>pivot_wider()</code> on <code>wage_long</code> to get back
 to one row per industry.</li>
 </ol>
+</div>
+</div>
+<div id="exporting-data-to-excel-or-csv" class="section level1">
+<h1>10. Exporting data to Excel or CSV</h1>
+<p>Once you have cleaned, manipulated, reshaped, and/or summarized your
+data into a form that can be exported back to Excel, there are several
+ways to move this data to an Excel or CSV file.</p>
+<div id="option-a-write_clip-function" class="section level3">
+<h3>Option A: write_clip() function</h3>
+<p>The <em>write_clip()</em> function essentially copies the data onto
+your computer’s clipboard. You can then simply paste the data into a
+blank Excel spreadsheet via Ctrl + V.</p>
+<p><strong>NOTE:</strong> You first need to install and load the package
+<strong>clipr</strong>.</p>
+<p>Taking the group_by() and summarize() example from earlier, let’s
+load the <strong>clipr</strong> package and then tack on a write_clip
+function to the end of the pipeline:</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" tabindex="-1"></a><span class="co"># install.packages(clipr)    </span></span>
+<span id="cb63-2"><a href="#cb63-2" tabindex="-1"></a><span class="fu">library</span>(clipr)</span>
+<span id="cb63-3"><a href="#cb63-3" tabindex="-1"></a></span>
+<span id="cb63-4"><a href="#cb63-4" tabindex="-1"></a>oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb63-5"><a href="#cb63-5" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
+<span id="cb63-6"><a href="#cb63-6" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp    =</span> <span class="fu">sum</span>(avg_employment),</span>
+<span id="cb63-7"><a href="#cb63-7" tabindex="-1"></a>            <span class="at">n_industries =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span>  </span>
+<span id="cb63-8"><a href="#cb63-8" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp)) <span class="sc">%&gt;%</span> </span>
+<span id="cb63-9"><a href="#cb63-9" tabindex="-1"></a>  <span class="fu">write_clip</span>()  <span class="co"># Copies the output of this operation into your clipboard, which you can easily paste into Excel</span></span></code></pre></div>
+<p>Now, you can open a blank Excel spreadsheet and paste in the
+output!</p>
+<p><strong>NOTE</strong>: <code>write_clip()</code> is preferable if the
+data you want to move into Excel is not too large.</p>
+</div>
+<div id="option-b-use-write.xlsx-and-write_csv" class="section level3">
+<h3>Option B: Use write.xlsx() and write_csv()</h3>
+<p>If you want to export your data as a new file into your working
+directory, you can use <code>write.xlsx()</code> and
+<code>write_csv()</code>.</p>
+<p>To use the <code>write.xlsx()</code> function, you will need to first
+install and load the <strong>openxlsx</strong> package. Fortunately,
+write_csv() is included with <strong>tidyverse</strong>.</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" tabindex="-1"></a><span class="co"># install.packages(&quot;openxlsx&quot;)</span></span>
+<span id="cb64-2"><a href="#cb64-2" tabindex="-1"></a><span class="fu">library</span>(openxlsx)</span>
+<span id="cb64-3"><a href="#cb64-3" tabindex="-1"></a></span>
+<span id="cb64-4"><a href="#cb64-4" tabindex="-1"></a>data_for_export <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb64-5"><a href="#cb64-5" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
+<span id="cb64-6"><a href="#cb64-6" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp    =</span> <span class="fu">sum</span>(avg_employment),</span>
+<span id="cb64-7"><a href="#cb64-7" tabindex="-1"></a>            <span class="at">n_industries =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span>  </span>
+<span id="cb64-8"><a href="#cb64-8" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp)) <span class="sc">%&gt;%</span> </span>
+<span id="cb64-9"><a href="#cb64-9" tabindex="-1"></a>  <span class="fu">write_clip</span>()</span>
+<span id="cb64-10"><a href="#cb64-10" tabindex="-1"></a></span>
+<span id="cb64-11"><a href="#cb64-11" tabindex="-1"></a><span class="fu">write.xlsx</span>(data_for_export, <span class="st">&quot;Oregon County Employment and Industry Count.xlsx&quot;</span>) <span class="co"># Creates a new Excel file in your working directory. Go check!</span></span>
+<span id="cb64-12"><a href="#cb64-12" tabindex="-1"></a></span>
+<span id="cb64-13"><a href="#cb64-13" tabindex="-1"></a><span class="fu">write_csv</span>(data_for_export, <span class="st">&quot;Oregon County Employment and Industry Count.csv&quot;</span>) <span class="co"># Creates a new CSV file in your working directory.</span></span></code></pre></div>
 <hr />
 </div>
 </div>
 <div id="putting-it-all-together" class="section level1">
-<h1>10. Putting It All Together</h1>
+<h1>11. Putting It All Together</h1>
 <p>Here is a full, simple pipeline from the raw extract to a county
-summary — load, join, group, summarize. This is what a tidy script looks
-like in practice: a few steps, read top to bottom.</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a>county_summary <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
-<span id="cb53-2"><a href="#cb53-2" tabindex="-1"></a>  <span class="fu">left_join</span>(naics_crosswalk, <span class="at">by =</span> <span class="st">&quot;naics&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb53-3"><a href="#cb53-3" tabindex="-1"></a>  <span class="fu">left_join</span>(oregon_fips, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;county&quot;</span> <span class="ot">=</span> <span class="st">&quot;county_name&quot;</span>)) <span class="sc">%&gt;%</span>  </span>
-<span id="cb53-4"><a href="#cb53-4" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
-<span id="cb53-5"><a href="#cb53-5" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment),</span>
-<span id="cb53-6"><a href="#cb53-6" tabindex="-1"></a>            <span class="at">avg_wage  =</span> <span class="fu">round</span>(<span class="fu">weighted.mean</span>(avg_annual_wage, avg_employment))) <span class="sc">%&gt;%</span></span>
-<span id="cb53-7"><a href="#cb53-7" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp))</span>
-<span id="cb53-8"><a href="#cb53-8" tabindex="-1"></a></span>
-<span id="cb53-9"><a href="#cb53-9" tabindex="-1"></a>county_summary</span></code></pre></div>
+summary — load, join, group, summarize, and copy to our clipboard. This
+is what a tidy script looks like in practice: multiple functions
+stringed together by pipes, in a way that accounts closely for order of
+operations.</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" tabindex="-1"></a>county_summary <span class="ot">&lt;-</span> oregon_qcew <span class="sc">%&gt;%</span></span>
+<span id="cb65-2"><a href="#cb65-2" tabindex="-1"></a>  <span class="fu">group_by</span>(county) <span class="sc">%&gt;%</span></span>
+<span id="cb65-3"><a href="#cb65-3" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_emp =</span> <span class="fu">sum</span>(avg_employment),</span>
+<span id="cb65-4"><a href="#cb65-4" tabindex="-1"></a>            <span class="at">avg_wage  =</span> <span class="fu">round</span>(<span class="fu">mean</span>(avg_annual_wage))) <span class="sc">%&gt;%</span></span>
+<span id="cb65-5"><a href="#cb65-5" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total_emp)) <span class="sc">%&gt;%</span> <span class="fu">write_clip</span>()</span>
+<span id="cb65-6"><a href="#cb65-6" tabindex="-1"></a></span>
+<span id="cb65-7"><a href="#cb65-7" tabindex="-1"></a>county_summary</span></code></pre></div>
 <pre><code>## # A tibble: 37 × 3
 ##    county               total_emp avg_wage
 ##    &lt;chr&gt;                    &lt;dbl&gt;    &lt;dbl&gt;
-##  1 Multnomah County        378022    77152
-##  2 Washington County       243597    95911
-##  3 Clackamas County        128979    69872
-##  4 Marion County           115102    57546
-##  5 Lane County             101887    53769
-##  6 Deschutes County         65573    62991
-##  7 Jackson County           53848    52354
-##  8 Unknown Or Undefined     39050   127557
-##  9 Linn County              23112    50163
-## 10 Yamhill County           21451    50500
+##  1 Multnomah County        378022    47053
+##  2 Washington County       243597    38283
+##  3 Clackamas County        128979    35511
+##  4 Marion County           115102    27574
+##  5 Lane County             101887    26651
+##  6 Deschutes County         65573    34535
+##  7 Jackson County           53848    23768
+##  8 Unknown Or Undefined     39050    46719
+##  9 Linn County              23112    16286
+## 10 Yamhill County           21451    16983
 ## # ℹ 27 more rows</code></pre>
 <p>This is the kind of table we’ll turn into charts this afternoon in
 the ggplot2 session.</p>
@@ -2192,6 +2347,8 @@ shared key</li>
 <strong><code>pivot_wider()</code></strong> — change the shape of
 data</li>
 <li><strong><code>%&gt;%</code></strong> — chain steps together</li>
+<li><strong>write_clip()</strong>, <strong>write.xlsx()</strong>, and
+<strong>write_csv()</strong> - export data</li>
 </ul>
 <p>For more practice, the free online book <a href="https://r4ds.hadley.nz/">R for Data Science</a> covers all of
 this, and the <a href="https://rstudio.github.io/cheatsheets/data-transformation.pdf">dplyr

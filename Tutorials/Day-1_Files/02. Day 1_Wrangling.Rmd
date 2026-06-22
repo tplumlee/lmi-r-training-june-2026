@@ -19,7 +19,7 @@ knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
 
 # Introduction
 
-This section covers the core verbs of the **tidyverse** for working with data. We'll use a prepared extract of Oregon QCEW (Quarterly Census of Employment and Wages) data: private-sector employment and wages by county and industry for 2025.
+This section covers the core functions of the **tidyverse** package that are essential for cleaning and manipulating tabular data. We'll use a prepared extract of Oregon QCEW (Quarterly Census of Employment and Wages) data: private-sector employment and wages by county and industry for the first 3 quarters of 2025.
 
 Almost everything here comes from one package, **dplyr** (with a little **tidyr** for reshaping at the end). Loading `tidyverse` brings them both, plus the pipe.
 
@@ -36,12 +36,12 @@ library(tidyverse)
 
 # The QCEW extract we'll work with. It has industry codes and county fips but not names —
 # we'll add names later using a crosswalk, which is a nice excuse to learn joins.
-oregon_qcew <- read_csv("oregon_counties_qcew.csv")
+oregon_qcew <- read_csv("Data/oregon_counties_qcew.csv")
 
 # Two small lookup tables for the joins section:
-naics_crosswalk <- read_csv("NAICS_crosswalk.csv")
+naics_crosswalk <- read_csv("Data/NAICS_crosswalk.csv")
 
-oregon_fips <- read_csv("oregon_fips.csv") %>%
+oregon_fips <- read_csv("Data/oregon_fips.csv") %>%
   rename(county_name = `county name`)     # fips code -> county name
 
 ```
@@ -52,21 +52,21 @@ oregon_fips <- read_csv("oregon_fips.csv") %>%
 
 Always look at a data frame before you start changing it. Three quick ways:
 
-- `dim()` — how many rows and columns
 - `names()` - column names in the dataset
-- `glimpse()` — column names, types, and the first few values
 - `summary()` - summary statistics of each column
-- `View()` (capital V) — open a spreadsheet-style viewer in RStudio
+- `dim()` — how many rows and columns
+- `glimpse()` — column names, types, and the first few values
+- `view()` — opens a spreadsheet-style viewer in RStudio. This is the same as clicking the white square icon to the right of a data frame in your Environment window. NOTE: The `tidyverse` package needs to be loaded for `view()` to work.
 
 ```{r}
-dim(oregon_qcew)
 names(oregon_qcew)
 summary(oregon_qcew)
+dim(oregon_qcew)
 glimpse(oregon_qcew)
-# View(oregon_qcew)
+
 ```
 
-Each row is one industry in one county:
+Looking at the data, we can tell that each row is one industry in one county. The columns include:
 
 - `county` — county name
 - `naics` — 6-digit industry code (no name yet — we'll add that with a join)
@@ -90,13 +90,19 @@ head(oregon_qcew)
 oregon_qcew %>% head()
 ```
 
-The pipe is most useful when you do several things in a row. Read it top to bottom, like a recipe:
+
+
+The pipe is most useful when you want do multiple things in a row. It's a powerful tool to string together several functions/operations into one command. You can think of the pipe operator like the word **"then"** - you tell R to run your first function, then your second function, then your third, etc. As such, note that the order of operations is critical. We want thoughtfully construct pipelines in a way that orders the data cleaning/manipulation/analysis process in the way you intend.   
+
+
 
 ```{r}
 oregon_qcew %>%
   filter(county == "Multnomah County, Oregon") %>%
   head()
 ```
+
+**NOTE:** The keyboard short cut for %>% is `Ctrl + Shift + M`
 
 ### Exercises
 
@@ -123,10 +129,20 @@ oregon_qcew %>%
   head()
 ```
 
+You can also use **select()** to reorder columns. Suppose we want to move `avg_employment` to the beginning:
+
+```{r}
+oregon_qcew %>% 
+  select(avg_employment, everything()) %>% 
+  head()
+```
+
+
 ### Exercises
 
 1. Select just `county`, `naics`, and `avg_annual_wage`.
 2. Select everything except `establishments`.
+3. Put `avg_employment` as the first column in the dataset
 
 ---
 
@@ -160,6 +176,24 @@ oregon_qcew %>%
   filter(county %in% c("Baker County, Oregon", "Benton County, Oregon"))
 ```
 
+In R, the symbol for negation is "**!**". Now, notice that there is a value in `county` called "*Unknown or Undefined*". And suppose that we want to filter out the rows where "*Unknown or Undefined*" is present in the `county` column:
+
+```{r}
+oregon_qcew %>% count(county) %>% print(n=50)  # This provides a list of all possible values in the "county" column
+
+oregon_qcew %>% filter(county != "Unknown or Undefined")
+
+```
+
+
+**filter()** is also commonly used to deal with *NA* values. Let's suppose that there are some values in the `avg_employment` column coded as *NA*, and we want to filter out those rows:
+
+```{r}
+oregon_qcew %>% 
+  filter(!is.na(avg_employment))
+```
+
+
 ### Exercises
 
 1. Filter to rows where `avg_annual_wage` is greater than 60000.
@@ -188,7 +222,7 @@ oregon_qcew %>%
   head()
 ```
 
-To create a column based on conditions, use `case_when()`. Each line is a condition on the left of the `~` and the value to assign on the right.
+To create a column based on conditions, use `case_when()`. Each line is a condition on the left of the `~` and the value to assign on the right. This is very useful when you want to re-code a continuous variable into a categorical one.
 
 ```{r}
 oregon_qcew %>%
@@ -200,6 +234,23 @@ oregon_qcew %>%
   select(county, naics, avg_employment, size) %>%
   head()
 ```
+
+
+**mutate()** can also be used to manipulate string variables. For example, the county names in the `county` column currently list as something like "Baker County". What if we want only the shorthand name "Baker" or "Multnomah"? We can use a tidyverse function called `str_replace()` inside a `mutate()` function to create a new column that contains only the shorthand name.
+
+
+```{r}
+oregon_qcew %>% 
+  mutate(county = str_replace(county, " County", "")) %>%  
+  head()
+
+# The arguments in str_replace are 1) the column in question, 2) the substring we want to replace, and 3) what we want to replace the substring with.
+
+```
+
+**NOTE:** In this instance, we are directly changing the values in the `county` column. If you want to keep the original county column, name the new column you're creating in `mutate()` as something other than "county", like "county_abbreviated". 
+
+
 
 ### Exercises
 
@@ -247,9 +298,11 @@ A few useful pieces:
 oregon_qcew %>%
   group_by(county) %>%
   summarize(total_emp    = sum(avg_employment),
-            n_industries = n()) %>%
-  arrange(desc(total_emp))
+            n_industries = n()) %>%  # n() counts the number of rows in a group
+  arrange(desc(total_emp))  # Sorts the variable "total_emp" from highest to lowest
 ```
+
+**NOTE:** After we apply *group_by()* and *summarize()*, the only columns we are left with are 1) what's in our *group_by()* function (in this example, `county`) and the variables we create in our *summarize()* function (in this example, `total_emp` and `n_industries`). **All other columns from the original dataset (i.e., oregon_qcew) disappear, and including them in subsequent functions in the pipeline will result in an error.** 
 
 ### Exercises
 
@@ -282,7 +335,7 @@ oregon_qcew %>%
   head()
 ```
 
-Same idea to add fips codes to the  county names from the FIPS lookup file, the data frame **oregon_fips**:
+Same idea to add fips codes to the  county names from the FIPS lookup file, the data frame **oregon_fips**. Note that if the shared columns are named differently between the two files we're joining, we use the syntax *by = c("column name from dataset A" = "column name from dataset B")*
 
 ```{r}
 oregon_qcew <- oregon_qcew %>%
@@ -348,20 +401,75 @@ wage_long %>%
 1. In `wage_long`, how many rows are there compared to the original? Why?
 2. Use `pivot_wider()` on `wage_long` to get back to one row per industry.
 
+
+# 10. Exporting data to Excel or CSV
+
+Once you have cleaned, manipulated, reshaped, and/or summarized your data into a form that can be exported back to Excel, there are several ways to move this data to an Excel or CSV file.
+
+### Option A: write_clip() function
+
+The *write_clip()* function essentially copies the data onto your computer's clipboard. You can then simply paste the data into a blank Excel spreadsheet via Ctrl + V. 
+
+**NOTE:** You first need to install and load the package **clipr**. 
+
+Taking the group_by() and summarize() example from earlier, let's load the **clipr** package and then tack on a write_clip function to the end of the pipeline:
+
+```{r}
+# install.packages(clipr)    
+library(clipr)
+
+oregon_qcew %>%
+  group_by(county) %>%
+  summarize(total_emp    = sum(avg_employment),
+            n_industries = n()) %>%  
+  arrange(desc(total_emp)) %>% 
+  write_clip()  # Copies the output of this operation into your clipboard, which you can easily paste into Excel
+
+```
+
+Now, you can open a blank Excel spreadsheet and paste in the output!
+
+**NOTE**: `write_clip()` is preferable if the data you want to move into Excel is not too large.
+
+### Option B: Use write.xlsx() and write_csv()
+
+If you want to export your data as a new file into your working directory, you can use `write.xlsx()` and `write_csv()`.
+
+To use the `write.xlsx()` function, you will need to first install and load the **openxlsx** package. Fortunately, write_csv() is included with **tidyverse**.
+
+```{r}
+# install.packages("openxlsx")
+library(openxlsx)
+
+data_for_export <- oregon_qcew %>%
+  group_by(county) %>%
+  summarize(total_emp    = sum(avg_employment),
+            n_industries = n()) %>%  
+  arrange(desc(total_emp)) %>% 
+  write_clip()
+
+write.xlsx(data_for_export, "Oregon County Employment and Industry Count.xlsx") # Creates a new Excel file in your working directory. Go check!
+
+write_csv(data_for_export, "Oregon County Employment and Industry Count.csv") # Creates a new CSV file in your working directory.
+
+```
+
+
 ---
 
-# 10. Putting It All Together
+# 11. Putting It All Together
 
-Here is a full, simple pipeline from the raw extract to a county summary — load, join, group, summarize. This is what a tidy script looks like in practice: a few steps, read top to bottom.
+Here is a full, simple pipeline from the raw extract to a county summary — load, join, group, summarize, and copy to our clipboard. This is what a tidy script looks like in practice: multiple functions stringed together by pipes, in a way that accounts closely for order of operations.
 
 ```{r}
 county_summary <- oregon_qcew %>%
   group_by(county) %>%
   summarize(total_emp = sum(avg_employment),
             avg_wage  = round(mean(avg_annual_wage))) %>%
-  arrange(desc(total_emp))
+  arrange(desc(total_emp)) %>% write_clip()
 
 county_summary
+
 ```
 
 This is the kind of table we'll turn into charts this afternoon in the ggplot2 session.
@@ -380,6 +488,7 @@ You now know the core tidyverse verbs:
 - **`left_join()`** — combine two tables on a shared key
 - **`pivot_longer()`** / **`pivot_wider()`** — change the shape of data
 - **`%>%`** — chain steps together
+- **write_clip()**, **write.xlsx()**, and **write_csv()** - export data
 
 For more practice, the free online book [R for Data Science](https://r4ds.hadley.nz/) covers all of this, and the [dplyr cheat sheet](https://rstudio.github.io/cheatsheets/data-transformation.pdf) is a handy one-page reference.
 

@@ -1584,13 +1584,15 @@ Intermediate</h4>
 Day 1 exercises did not come from BLS in that shape. It started as a
 folder of raw quarterly CSVs — one per geographic area — that required
 trimming, reshaping, and renaming before it became analysis-ready.</p>
-<p>This bonus tutorial walks through how the file was built, end to end.
-It is optional; nothing in Day 1 or Day 2 depends on it. The techniques
-here are general-purpose: reading many files at once, filtering to
-relevant rows, computing derived columns, and writing a clean output.
-The same workflow applies to most bulk public data — BLS LAUS, Census
-ACS Summary File tables, IPUMS state extracts, and similar sources that
-publish one file per geography per period.</p>
+<p>This bonus tutorial walks through how the file
+<code>oregon_counties_qcew.csv</code> was built. It is optional as
+nothing in Day 1 or Day 2 depends on it, but this tutorial can provide
+additional context on the data cleaning/wrangling process. The
+techniques here include reading many files at once (rather than one at a
+time), filtering to relevant rows, computing derived columns, and
+writing a clean output. The same workflow applies to most bulk public
+data — BLS LAUS, Census ACS Summary File tables, IPUMS state extracts,
+and similar sources that publish one file per geography per period.</p>
 <p>The pipeline has five steps:</p>
 <ol style="list-style-type: decimal">
 <li><strong>Trim</strong> the unzipped quarterly folder to the Oregon
@@ -1618,11 +1620,13 @@ in their filenames; everything else covers other states or non-Oregon
 geographies.</p>
 <p>Place the unzipped folder into your project — for this tutorial we
 will call it <code>Data/</code>.</p>
+<p><strong>NOTE:</strong> At the time this tutorial was created (May
+2026), the most recent quarterly file is for the period Q1-Q3 2025.</p>
 <hr />
 </div>
 <div id="setup" class="section level1">
 <h1>Setup</h1>
-<p>Clear the workspace and load the tidyverse:</p>
+<p>Clear the workspace and load the tidyverse package:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div>
 <p><code>rm(list = ls())</code> removes every object from the current
@@ -1631,7 +1635,7 @@ from scratch. Loading <code>tidyverse</code> brings in
 <code>dplyr</code>, <code>readr</code>, <code>stringr</code>, and
 <code>purrr</code> in one call.</p>
 <p>Set the working directory and define a path to the data folder:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;C:/Users/Paul Liu/Desktop/R Course (June 2-3)&quot;</span>)</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;C:/Users/Paul Liu/Desktop/R Course (June 2-3)&quot;</span>)  <span class="co"># Use the file path to your own working directory!</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>data_path <span class="ot">&lt;-</span> <span class="st">&quot;Data&quot;</span></span></code></pre></div>
 <p>Use forward slashes; Windows backslashes do not work in R paths.</p>
 <hr />
@@ -1648,34 +1652,17 @@ folder.</li>
 strings. With <code>value = TRUE</code>, it returns the matching
 strings.</li>
 </ul>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>all_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(data_path, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>oregon_files <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;, Oregon&quot;</span>, all_files, <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">length</span>(all_files)</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">length</span>(oregon_files)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>all_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(data_path, <span class="at">full.names =</span> <span class="cn">TRUE</span>)  <span class="co"># Note that we defined the data_path object as simply &quot;Data&quot;, the name of the subfolder where all the downloaded CSV files are stored.</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>oregon_files <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;, Oregon&quot;</span>, all_files, <span class="at">value =</span> <span class="cn">TRUE</span>) <span class="co"># Filters for all CSV files that contain the sub-string &quot; ,Oregon&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">length</span>(all_files)</span></code></pre></div>
+<pre><code>## [1] 4451</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">length</span>(oregon_files)</span></code></pre></div>
+<pre><code>## [1] 37</code></pre>
 <p><code>oregon_files</code> now holds the paths to the Oregon CSVs.
 Non-Oregon files remain on disk and will be ignored by the rest of this
 script.</p>
-<div id="a-note-on-destructive-file-operations" class="section level2">
-<h2>A Note on Destructive File Operations</h2>
-<p>The original script took a different route — it deleted every
-non-Oregon file from the data folder, leaving only the Oregon files
-behind:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>files_to_delete <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;, Oregon&quot;</span>, all_files, <span class="at">invert =</span> <span class="cn">TRUE</span>, <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">file.remove</span>(files_to_delete)</span></code></pre></div>
-<p>The <code>invert = TRUE</code> flag flips <code>grep</code> to return
-the non-matching strings. <code>file.remove()</code> then deletes
-them.</p>
-<p><strong>Warning.</strong> <code>file.remove()</code> is permanent. It
-does not move files to the Recycle Bin — it deletes them outright.
-Before running any script that calls <code>file.remove()</code>:</p>
-<ul>
-<li>Keep a backup of the raw download.</li>
-<li>Print <code>files_to_delete</code> and verify it before calling
-<code>file.remove()</code>.</li>
-</ul>
-<p>Prefer the filter-list pattern above when running unfamiliar code.
-The remainder of this tutorial uses that pattern.</p>
 <div id="exercises" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1688,12 +1675,12 @@ each contains the <code>, Oregon</code> pattern.</li>
 <hr />
 </div>
 </div>
-</div>
 <div id="read-and-combine-the-oregon-files" class="section level1">
 <h1>2. Read and Combine the Oregon Files</h1>
 <p>Each Oregon county has its own CSV with identical column structure.
-To analyze them together, read each into a data frame and stack them
-into one combined frame.</p>
+To analyze them together, our approach is to <strong>read each into a
+data frame</strong> and <strong>stack or append them into one combined
+data frame</strong>.</p>
 <p>The pattern:</p>
 <ol style="list-style-type: decimal">
 <li>Apply <code>read.csv()</code> to every file path, producing a list
@@ -1701,19 +1688,19 @@ of data frames.</li>
 <li>Use <code>bind_rows()</code> to stack the list into a single data
 frame.</li>
 </ol>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Clean filenames (no path, no .csv extension) — optional</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>oregon_file_names <span class="ot">&lt;-</span> tools<span class="sc">::</span><span class="fu">file_path_sans_ext</span>(<span class="fu">basename</span>(oregon_files))</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>oregon_file_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(oregon_files, read.csv)</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">names</span>(oregon_file_list) <span class="ot">&lt;-</span> oregon_file_names</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>oregon_counties <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(oregon_file_list)</span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">rm</span>(oregon_file_list)  <span class="co"># free the memory</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Clean filenames (no path, no .csv extension) — optional</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>oregon_file_names <span class="ot">&lt;-</span> tools<span class="sc">::</span><span class="fu">file_path_sans_ext</span>(<span class="fu">basename</span>(oregon_files))</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>oregon_file_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(oregon_files, read.csv)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">names</span>(oregon_file_list) <span class="ot">&lt;-</span> oregon_file_names</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>oregon_counties <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(oregon_file_list)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">rm</span>(oregon_file_list)  <span class="co"># free the memory</span></span></code></pre></div>
 <p>Two things to note:</p>
 <ul>
 <li><code>lapply()</code> is base R’s tool for applying a function to
-every element of a list or vector. Day 2’s session covers
-<code>map()</code>, the tidyverse equivalent.</li>
+every element of a list or vector. The <code>map()</code> function the
+tidyverse equivalent of this.</li>
 <li><code>bind_rows()</code> (from <code>dplyr</code>) requires
 compatible column structures across the data frames it stacks. Columns
 missing from any individual data frame are filled with <code>NA</code>,
@@ -1722,16 +1709,16 @@ which accommodates files that are similar but not identical.</li>
 <p>Passing <code>.id = &quot;source_file&quot;</code> to <code>bind_rows()</code>
 adds a column with the name of each source file, useful when you need to
 trace rows back to their origin. Not required here.</p>
-<div id="tidyverse-alternative-stretch" class="section level2">
-<h2>Tidyverse Alternative (Stretch)</h2>
+<div id="tidyverse-alternative" class="section level2">
+<h2>Tidyverse Alternative</h2>
 <p>Steps 1 and 2 can be written as a single pipeline using
 <code>purrr::map()</code> and <code>bind_rows()</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>oregon_counties <span class="ot">&lt;-</span> <span class="fu">list.files</span>(data_path, <span class="at">pattern =</span> <span class="st">&quot;, Oregon&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">map</span>(read.csv) <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">bind_rows</span>()</span></code></pre></div>
-<p>Same result, no intermediate list. The longer version above is more
-transparent line-by-line; the short version is what you will see in
-production code.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>oregon_counties <span class="ot">&lt;-</span> <span class="fu">list.files</span>(data_path, <span class="at">pattern =</span> <span class="st">&quot;, Oregon&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span>  <span class="co"># Filter for all Oregon files</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">map</span>(read.csv) <span class="sc">%&gt;%</span>  <span class="co"># Read all selected CSV files into R</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="fu">bind_rows</span>()   <span class="co"># Append all the files R just read in into one single data frame</span></span></code></pre></div>
+<p>Same result, but done in one short pipeline. The longer Base R
+version above is more transparent line-by-line; the short version is
+what you might see in production code.</p>
 <div id="exercises-1" class="section level3">
 <h3>Exercises</h3>
 <ol style="list-style-type: decimal">
@@ -1760,8 +1747,9 @@ vs. various levels of government.</li>
 level of summary.</li>
 <li><strong>Time</strong> (<code>year</code>, <code>qtr</code>).</li>
 </ul>
-<p>For a private-sector, county-level, detailed-industry dataset for one
-quarter, three filters apply:</p>
+<p>For the purpose of this course, we want to simplify the data by
+filtering just for a private-sector, county-level, and detailed-industry
+dataset for one quarter. We will therefore apply 3 filters:</p>
 <ul>
 <li><strong><code>own_code == 5</code></strong> — private sector. Codes
 1–4 are federal, state, local, and international government; codes 6–9
@@ -1777,41 +1765,54 @@ would double-count if mixed with 6-digit codes.</li>
 <code>&quot;\\d{6}$&quot;</code> matches exactly six digits at the end of the
 string; <code>$</code> is the end-of-string anchor.
 <code>str_detect()</code> (from <code>stringr</code>) tests it.</p>
+<p>See this cheat sheet on Regular Expressions if you want to learn
+more: <a href="https://rstudio.github.io/cheatsheets/regex.pdf" class="uri">https://rstudio.github.io/cheatsheets/regex.pdf</a></p>
 <hr />
 </div>
 <div id="filter-compute-rename-select" class="section level1">
 <h1>4. Filter, Compute, Rename, Select</h1>
 <p>A single pipeline handles the row filters, derived columns, renames,
 and final column selection.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>oregon_counties_clean <span class="ot">&lt;-</span> oregon_counties <span class="sc">%&gt;%</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="co"># Private sector, Q3, 6-digit NAICS</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">filter</span>(own_code <span class="sc">==</span> <span class="dv">5</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>         qtr <span class="sc">==</span> <span class="dv">3</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>         <span class="fu">str_detect</span>(<span class="fu">as.character</span>(industry_code), <span class="st">&quot;</span><span class="sc">\\</span><span class="st">d{6}$&quot;</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="co"># Derived columns</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="at">avg_employment  =</span> <span class="fu">round</span>((month1_emplvl <span class="sc">+</span> month2_emplvl <span class="sc">+</span> month3_emplvl) <span class="sc">/</span> <span class="dv">3</span>),</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="at">avg_annual_wage =</span> avg_wkly_wage <span class="sc">*</span> <span class="dv">52</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>    <span class="co"># Strip &quot;NAICS 111110 &quot; prefix (12 chars + space) from the industry title</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>    <span class="at">industry_title  =</span> <span class="fu">str_sub</span>(industry_title, <span class="at">start =</span> <span class="dv">13</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="co"># Friendlier column names</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    <span class="at">fips           =</span> area_fips,</span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>    <span class="at">naics          =</span> industry_code,</span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>    <span class="at">county         =</span> area_title,</span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>    <span class="at">industry_name  =</span> industry_title,</span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>    <span class="at">establishments =</span> qtrly_estabs_count</span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a></span>
-<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>  <span class="co"># Keep only the columns we will use</span></span>
-<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>  <span class="fu">select</span>(fips, county, naics, industry_name,</span>
-<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a>         establishments, avg_employment, avg_wkly_wage, avg_annual_wage)</span>
-<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a></span>
-<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="fu">glimpse</span>(oregon_counties_clean)</span>
-<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(oregon_counties_clean<span class="sc">$</span>county))</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>oregon_counties_clean <span class="ot">&lt;-</span> oregon_counties <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="co"># Private sector, Q3, 6-digit NAICS</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">filter</span>(own_code <span class="sc">==</span> <span class="dv">5</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>         qtr <span class="sc">==</span> <span class="dv">3</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>         <span class="fu">str_detect</span>(<span class="fu">as.character</span>(industry_code), <span class="st">&quot;</span><span class="sc">\\</span><span class="st">d{6}$&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="co"># Derive/simplify the employment and wage columns</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    <span class="at">avg_employment  =</span> <span class="fu">round</span>((month1_emplvl <span class="sc">+</span> month2_emplvl <span class="sc">+</span> month3_emplvl) <span class="sc">/</span> <span class="dv">3</span>),</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="at">avg_annual_wage =</span> avg_wkly_wage <span class="sc">*</span> <span class="dv">52</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="co"># Strip &quot;NAICS 111110 &quot; prefix (12 chars + space) from the industry title</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>    <span class="at">industry_title  =</span> <span class="fu">str_sub</span>(industry_title, <span class="at">start =</span> <span class="dv">13</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  <span class="co"># Simplify column names</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>    <span class="at">fips           =</span> area_fips,</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>    <span class="at">naics          =</span> industry_code,</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>    <span class="at">county         =</span> area_title,</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>    <span class="at">industry_name  =</span> industry_title,</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>    <span class="at">establishments =</span> qtrly_estabs_count</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>  <span class="co"># Keep only the columns we will use</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>  <span class="fu">select</span>(fips, county, naics, industry_name,</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>         establishments, avg_employment, avg_wkly_wage, avg_annual_wage)</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="fu">glimpse</span>(oregon_counties_clean)</span></code></pre></div>
+<pre><code>## Rows: 13,909
+## Columns: 8
+## $ fips            &lt;int&gt; 41001, 41001, 41001, 41001, 41001, 41001, 41001, 41001…
+## $ county          &lt;chr&gt; &quot;Baker County, Oregon&quot;, &quot;Baker County, Oregon&quot;, &quot;Baker…
+## $ naics           &lt;chr&gt; &quot;111140&quot;, &quot;111211&quot;, &quot;111219&quot;, &quot;111421&quot;, &quot;111940&quot;, &quot;111…
+## $ industry_name   &lt;chr&gt; &quot; Wheat farming&quot;, &quot; Potato farming&quot;, &quot; Other vegetable…
+## $ establishments  &lt;int&gt; 1, 6, 1, 2, 1, 4, 22, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2, 3,…
+## $ avg_employment  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ avg_wkly_wage   &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ avg_annual_wage &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(oregon_counties_clean<span class="sc">$</span>county))</span></code></pre></div>
+<pre><code>## [1] 37</code></pre>
 <p>Several choices in this pipeline are worth flagging:</p>
 <ul>
 <li><strong><code>as.character()</code> inside
@@ -1850,14 +1851,14 @@ chain that returns the top five industries statewide in
 <hr />
 </div>
 </div>
-<div id="final-tidy-ups" class="section level1">
-<h1>5. Final Tidy-Ups</h1>
+<div id="final-tidying-steps" class="section level1">
+<h1>5. Final Tidying Steps</h1>
 <p>Two final adjustments before saving:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>oregon_counties_clean <span class="ot">&lt;-</span> oregon_counties_clean <span class="sc">%&gt;%</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    <span class="at">county =</span> <span class="fu">str_remove</span>(county, <span class="st">&quot;, Oregon&quot;</span>),</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">naics  =</span> <span class="fu">as.character</span>(naics)</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>oregon_counties_clean <span class="ot">&lt;-</span> oregon_counties_clean <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>    <span class="at">county =</span> <span class="fu">str_remove</span>(county, <span class="st">&quot;, Oregon&quot;</span>),  <span class="co"># Can also be done with str_replace(county, &quot;, Oregon&quot;, &quot;&quot;)</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>    <span class="at">naics  =</span> <span class="fu">as.character</span>(naics)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  )</span></code></pre></div>
 <ul>
 <li><strong>Strip the state suffix.</strong> <code>area_title</code>
 arrives as <code>&quot;Baker County, Oregon&quot;</code>. Once the data is
@@ -1873,28 +1874,16 @@ leading digits if stored as integers.</li>
 </div>
 <div id="save-the-cleaned-csv" class="section level1">
 <h1>6. Save the Cleaned CSV</h1>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">write.csv</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  oregon_counties_clean <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>industry_name, <span class="sc">-</span>fips),</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="st">&quot;oregon_counties_qcew.csv&quot;</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">write_csv</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  oregon_counties_clean <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>industry_name, <span class="sc">-</span>fips), <span class="co"># Get rid of industry_name and fips so we can do the join exercise later.</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="st">&quot;oregon_counties_qcew.csv&quot;</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  )</span></code></pre></div>
 <p><code>industry_name</code> and <code>fips</code> are dropped on the
 way out. They get re-joined in the morning Wrangling tutorial — from
 <code>NAICS_crosswalk.csv</code> and <code>oregon_fips.csv</code> — to
 give students a motivating reason to learn <code>left_join()</code>. A
 fully self-contained file would keep both columns.</p>
-<p><code>row.names = FALSE</code> suppresses <code>write.csv()</code>’s
-default behavior of adding an unnamed index column.</p>
-<div id="tidyverse-equivalent" class="section level2">
-<h2>Tidyverse Equivalent</h2>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">write_csv</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  oregon_counties_clean <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>industry_name, <span class="sc">-</span>fips),</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="st">&quot;oregon_counties_qcew.csv&quot;</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>)</span></code></pre></div>
-<p><code>write_csv()</code> (from <code>readr</code>) is the tidyverse
-equivalent. It never adds row names and is faster on large files.</p>
 <hr />
-</div>
 </div>
 <div id="wrap-up" class="section level1">
 <h1>Wrap-Up</h1>
@@ -1913,8 +1902,8 @@ expression.</li>
 </ul>
 <p>For deeper work in this area:</p>
 <ul>
-<li><strong><code>purrr</code></strong> (covered in Day 2) provides
-tidyverse equivalents to <code>lapply()</code> and friends.</li>
+<li><strong><code>purrr</code></strong> provides tidyverse equivalents
+to <code>lapply()</code> and friends.</li>
 <li><strong><code>fs</code></strong> is a tidyverse alternative to base
 R file operations (<code>fs::dir_ls()</code>,
 <code>fs::file_delete()</code>) with safer defaults.</li>

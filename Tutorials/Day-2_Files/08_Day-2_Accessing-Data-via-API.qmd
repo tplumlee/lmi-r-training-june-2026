@@ -5,7 +5,6 @@ date-format: "dddd, MMMM D, YYYY; h:mmA"
 execute: 
   message: false
 ---
-
 # API Basics
 
 ## What is an API? Why use one?
@@ -119,6 +118,7 @@ When pulling data for 2024 we will also set `geometry = TRUE` to download the co
 
 ```{r}
 #| label: acs-2024
+#| message: false
 
 # 2020-2024 5-year ACS estimates
 or_pop_2024 <- get_acs(
@@ -339,6 +339,7 @@ You can then retrieve your key in any script with `Sys.getenv("BLS_KEY")`. We wi
 
 ```{r}
 #| label: load-blsapi
+#| eval: false
 
 library(blsAPI)
 ```
