@@ -16,7 +16,7 @@ This directory contains two sub-folders:
 ------
 
 **To Reproduce the HTML Tutorial Files**
-You can re-render the tutorial files yourself from the Terminal---ensure that your working directory is set to the parent folder (`lmi-r-training-2026-main`) and use the following command:
+You can re-render the tutorial files yourself from the Terminal --- ensure that your working directory is set to the parent folder (`lmi-r-training-2026-main`) and use the following command:
 
 ```bash
 quarto render 
